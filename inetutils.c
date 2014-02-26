@@ -3,18 +3,18 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-/* returns the the IP number entryno associated with host hostname in host byte order. returns 0 on error. sets errno to 1 if host was not found. sets errno to 2 if entryno is greater than the number of IPs known for the host*/
-unsigned long getIPbyname(char *hostname, short entryno)
+/* returns a 0 terminated vector of addresses associated with host hostname in host byte order. returns NULL if host was not found (errno=1) or could not allocate memory (errno=2)*/
+unsigned long *getIPbyname(char *hostname)
 {
-	unsigned long IP;
-	struct hostent* hostinfo = gethostbyname(hostname);
-	struct in_addr* address;
-	int addrno;
+	unsigned long *IPs;
+	struct hostent *hostinfo = gethostbyname(hostname);
+	struct in_addr *address;
+	int addrno, i;
 
 	if(hostinfo == NULL)
 	{
 		errno = 1;
-		return (int)NULL;
+		return NULL;
 	}
 
 	/*check how many addresses are in h_addr_list */
@@ -23,15 +23,21 @@ unsigned long getIPbyname(char *hostname, short entryno)
 		address = (struct in_addr*)hostinfo->h_addr_list[addrno];
 	}
 
-	addrno--;
+	IPs = calloc(addrno, sizeof(unsigned int));	/*all bytes set to zero*/
 
-	if(entryno>=addrno)
+	if(IPs==NULL)
 	{
-		errno=2;
-		return (int)NULL;
+		errno = 2;
+		return NULL;
 	}
-	
-	IP = ntohl(((struct in_addr*)hostinfo->h_addr_list[entryno])->s_addr);
 
-	return IP;
+	addrno--;	/* do not access last h_addr_list (NULL) */
+
+	for(i=0; i<addrno; i++)
+	{
+		address = (struct in_addr*)hostinfo->h_addr_list[i];
+		IPs[i] = ntohl(((struct in_addr*)hostinfo->h_addr_list[i])->s_addr);
+	}
+
+	return IPs;
 }

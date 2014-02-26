@@ -5,13 +5,31 @@
 #include <unistd.h>
 #include <netdb.h>
 
+//#define DEBUG
+
 int main(int argc, char **argv)
 {
 	unsigned short talkport=7000;
 	unsigned short dnsport=7000;
 	unsigned short saport=58000;
-	unsigned long saIP = getIPbyname("tejo.ist.utl.pt", 0);
+	unsigned long *saIPs = getIPbyname("tejo.ist.utl.pt");
+	unsigned long saIP;
 
+	if(saIPs==NULL)
+	{
+		exit(1);
+	}
+	else
+	{
+		saIP = saIPs[0];
+		free(saIPs);
+	}
+
+	#ifdef DEBUG
+
+	printf("%08lX\n", saIP);
+
+	#endif
 
 /*-------- check arguments --------*/
 
@@ -21,7 +39,7 @@ int main(int argc, char **argv)
 	{
 		usage(argv[0]);
 		puts("Exiting...");
-		exit(1);
+		exit(2);
 	}
 	else
 	{
