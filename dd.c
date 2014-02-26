@@ -1,12 +1,16 @@
 #include "utils.h"
+#include "inetutils.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
+#include <netdb.h>
 
 int main(int argc, char **argv)
 {
-
+	unsigned short talkport=7000;
+	unsigned short dnsport=7000;
+	unsigned short saport=58000;
+	unsigned long saIP = getIPbyname("tejo.ist.utl.pt", 0);
 
 
 /*-------- check arguments --------*/
