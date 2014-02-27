@@ -26,7 +26,7 @@ int UDPcreate(unsigned short port)
 
 	memset((void*)&addr,(int)'\0',sizeof(addr));
 	addr.sin_family=AF_INET;
-	addr.sin_addr.s_addr=htonl(INADDR_ANY);
+	addr.sin_addr.s_addr=htonl(INADDR_ANY); /* socket will be bound to all local interfaces */
 	addr.sin_port=htons(port);
 
 	if(bind(UDPfd,(struct sockaddr*)&addr,sizeof(addr))==-1)
