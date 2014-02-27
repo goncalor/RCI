@@ -43,6 +43,7 @@ unsigned long *getIPbyname(char *hostname)
 }
 
 
+/* returns the address in ascii_address converted to an unsigned long integer, in host byte order. returns 0 if ascii_address is an unvalid IPv4 address */
 unsigned long atoh(char *ascii_address)
 {
 	unsigned long IP;
@@ -58,5 +59,4 @@ unsigned long atoh(char *ascii_address)
 
 	return IP;
 }
-
 
