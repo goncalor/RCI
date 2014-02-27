@@ -41,3 +41,22 @@ unsigned long *getIPbyname(char *hostname)
 
 	return IPs;
 }
+
+
+unsigned long atoh(char *ascii_address)
+{
+	unsigned long IP;
+	struct in_addr address;
+
+	if(inet_aton(ascii_address, &address)==0)
+	{
+		errno = 1;
+		return 0;
+	}
+
+	IP = ntohl(address.s_addr);
+
+	return IP;
+}
+
+
