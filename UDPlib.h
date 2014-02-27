@@ -4,7 +4,6 @@
 typedef struct UDPmssinfo UDPmssinfo;
 
 
-
 /*******************************************************************
 Creates a socket to use with UDP and binds it to the port specified
 
@@ -30,16 +29,22 @@ Returns 0 on sucess, -1 otherwise and errno is set.
 int UDPsend(unsigned long IP,unsigned short port,char * str);
 
 /*******************************************************************
+Creates UDPmssinfo struct and allocs memory
+*******************************************************************/
+UDPmssinfo * UDPmssinfocreate(char * message, unsigned short port, unsigned long IP);
+
+
+/*******************************************************************
 can only be called if there is a message to receive in the socket
 
 only receives one message every time it is called
 
 fills UDPmssinfo in host byte order
 *******************************************************************/
-UDPmssinfo UDPrecv();
+UDPmssinfo * UDPrecv();
 
 /*******************************************************************
-
+Returns a pointer to the message in UDPmssinfo
 *******************************************************************/
 char * UDPgetmss(UDPmssinfo *);
 
@@ -53,14 +58,9 @@ Returns -1 on IP and port missmatch
 int UDPcmpsender(unsigned long IP,unsigned short port, UDPmssinfo *);
 
 /*******************************************************************
-
+Frees the memory used by UDPmssinfo
 *******************************************************************/
 void UDPfreemssinfo(UDPmssinfo *);
-
-/*******************************************************************
-
-*******************************************************************/
-
 
 
 #endif

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 DEPS = TCPlib.h UDPlib.h utils.h inetutils.h
-OBJ = dd.o utils.o inetutils.o
+OBJ = dd.o utils.o inetutils.o TCPlib.o UDPlib.o
 EDITOR = gedit
 
 dd: $(OBJ)
