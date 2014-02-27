@@ -18,10 +18,12 @@ unsigned long *getIPbyname(char *hostname)
 	}
 
 	/*check how many addresses are in h_addr_list */
-	for(addrno=0; address!=NULL; addrno++)
+	addrno=0;
+	do
 	{
 		address = (struct in_addr*)hostinfo->h_addr_list[addrno];
-	}
+		addrno++;
+	}while(address!=NULL);
 
 	IPs = calloc(addrno, sizeof(unsigned int));	/*all bytes set to zero*/
 
