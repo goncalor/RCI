@@ -54,7 +54,7 @@ int UDPsend(unsigned long IP,unsigned short port,char * str)
 
 	return 0;
 }
-	
+
 
 UDPmssinfo * UDPmssinfocreate(char * message, unsigned short port, unsigned long IP)
 {
@@ -84,7 +84,7 @@ UDPmssinfo * UDPrecv()
 	return UDPmssinfocreate(buffer, src_addr.sin_port, src_addr.sin_addr.s_addr);
 
 }
-	
+
 
 char * UDPgetmss(UDPmssinfo *a)
 {
