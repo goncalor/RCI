@@ -5,10 +5,7 @@
 struct db {
 
 	void **	db_table;
-	unsigned long authIP;
-	unsigned short authDNSport
-	char authname[BUF_LEN];
-	char authsurname[BUF_LEN];
+	int auth; /*has value 1 if it is the authorized SNP, 0 otherwise*/
 
 };
 
@@ -22,5 +19,17 @@ struct person {
 };
 
 
-db * dbcreate(unsigned long authIP, unsigned short authDNSport, )
+db * dbcreate(int Auth)
+{
+	db * new=(db*)calloc(1,sizeof(db));
+	new->db_table=(void **)calloc(255,sizeof(void*));
+	new->auth=Auth;
 
+	return new;
+}
+
+int personcmp(person * one, person * two)
+{
+	return one->IP==two->IP && one->DNSport==two->DNSport;
+
+}

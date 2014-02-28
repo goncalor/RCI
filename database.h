@@ -6,7 +6,7 @@ typedef struct db db;
 typedef struct person person;
 
 
-int AmItheAuth();
+int personcmp(person * one, person * two);
 
 
 
