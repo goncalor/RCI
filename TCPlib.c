@@ -58,26 +58,19 @@ int TCPsend(int fd, char *message, unsigned int len)
 	return 0;
 }
 
-
-/* reads content from fd and writes at most len bytes to the location starting at str. retuns the number of bytes written to str. returns -1 on unsuccessful read. retuns -2 if connection is closed by peer */
+/* reads available content from fd and writes at most len bytes to the location starting at str. retuns the number of bytes written to str. returns -1 on unsuccessful read. retuns -2 if connection is closed by peer */
 int TCPrecv(int fd, char *str, unsigned int len)
 {
 	char *ptr = str;
-	int nread, nleft;
+	int nread;
 
-	nleft = len;
-	while(nleft>0)
-	{
-		nread = read(fd, ptr, nleft);
-		if(nread==-1)
-			return -1;	/* error while reading */
-		else if(nread==0)
-			return -2;	/* connection closed by peer */
-		nleft -= nread;
-		ptr += nread;
-	}
+	nread = read(fd, ptr, len);
+	if(nread==-1)
+		return -1;	/* error while reading */
+	else if(nread==0)
+		return -2;	/* connection closed by peer */
 
-	return nread = len - nleft;
+	return nread;
 }
 
 /* closes the file descriptor fd. retuns 0 on success. returns -1 on error and sets errno */
@@ -86,7 +79,7 @@ int TCPclose(int fd)
 	return close(fd);
 }
 
-/* binds IP and port to the returned fd. when failing to create a socket returns -1; when failing to connect returns -2. sets errno in both cases. */
+/* binds IP and port to the returned fd. when failing to create a socket returns -1; when failing to bind IP and port to a fd returns -2. sets errno in both cases. */
 int TCPcreate(unsigned long IP, unsigned short port)
 {
 	int fd;
