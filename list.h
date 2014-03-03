@@ -12,6 +12,6 @@ void LSTdestroy(list *lst, void (*free_item)(Item));
 list *LSTeditfollowing(list *current, list *following);
 Item LSTgetitem(list *element);
 list *LSTfollowing(list *current);
-Item LSTapply(list *element, void *(*function)(Item, Item), Item item);
+Item LSTapply(list *element, Item (*function)(Item, Item), Item item);
 
 #endif

@@ -39,6 +39,7 @@ list *LSTremove(list *prev, list *to_remove, void(*free_item)(Item))
 	else
 	{
 		aux = to_remove->next;
+		(*free_item)(to_remove->item);
 		free(to_remove);
 		if(prev!=NULL)
 			prev->next = aux;
@@ -81,7 +82,7 @@ list *LSTfollowing(list *current)
 }
 
 /* applies the function pointed to by function to the item inside element. item can be used to pass information to function. returns the return value of function, which should then be properly cast to the return type of function */
-Item LSTapply(list *element, void *(*function)(Item, Item), Item item)
+Item LSTapply(list *element, Item (*function)(Item, Item), Item item)
 {
 	return (*function)(element->item, item);
 }
