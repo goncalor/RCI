@@ -7,7 +7,7 @@ typedef struct list list;
 
 list *LSTinit();
 list *LSTadd(list *next, Item item);
-list *LSTremove(list *prev, list *to_remove);
+list *LSTremove(list *prev, list *to_remove, void (*free_item)(Item));
 void LSTdestroy(list *lst, void (*free_item)(Item));
 list *LSTeditfollowing(list *current, list *following);
 Item LSTgetitem(list *element);
