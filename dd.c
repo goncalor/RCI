@@ -7,6 +7,8 @@
 #include <string.h>
 
 #define NAME_LEN 128
+#define BUF_LEN 1024
+#define COMM_LEN 40
 
 #define DEBUG
 
@@ -19,6 +21,7 @@ int main(int argc, char **argv)
 	unsigned long saIP;
 	unsigned long ddIP;
 	char *username, name[NAME_LEN], surname[NAME_LEN];
+	char buf[BUF_LEN], comm[COMM_LEN];
 
 	if(saIPs==NULL)
 	{
@@ -48,6 +51,8 @@ int main(int argc, char **argv)
 		{
 			exit(3);
 		}
+
+	/*crete myself as a person. name and surname buffers will be reused*/
 
 		ddIP = atoh(argv[2]);
 		if(ddIP==0)
@@ -92,7 +97,76 @@ int main(int argc, char **argv)
 
 /*-------- END check arguments --------*/
 
+/*-------- parse user options --------*/
 
+	fgets(buf, BUF_LEN, stdin);
+
+	if(sscanf(buf, " %s", comm)!=1)	/* no command present */
+	{
+		comm[0]=0;
+	}
+
+	if(strcmp(comm, "join")==0)
+	{
+		#ifdef DEBUG
+		puts("join");
+		#endif
+	}
+	else if(strcmp(comm, "leave")==0)
+	{
+		#ifdef DEBUG
+		puts("leave");
+		#endif
+	}
+	else if(strcmp(comm, "find")==0)
+	{
+		#ifdef DEBUG
+		puts("find");
+		#endif
+
+		if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
+			puts("> find name.surname");
+
+	}
+	else if(strcmp(comm, "connect")==0)
+	{
+		#ifdef DEBUG
+		puts("connect");
+		#endif
+
+		if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
+			puts("> connect name.surname");
+
+	}
+	else if(strcmp(comm, "disconnect")==0)
+	{
+		#ifdef DEBUG
+		puts("disconnect");
+		#endif
+	}
+	else if(strcmp(comm, "message")==0)
+	{
+		#ifdef DEBUG
+		puts("message");
+		#endif
+
+		if(sscanf(buf, " %*s %[^\n]", buf)!=1)
+			puts("> message string");
+		else
+		{
+			printf("%s\n", buf);
+		}
+	}
+	else if(strcmp(comm, "exit")==0)
+	{
+		#ifdef DEBUG
+		puts("exit");
+		#endif
+	}
+	else
+	{
+		printf("Unknown command '%s'\n", comm);
+	}
 
 
 	exit(0);
