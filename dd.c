@@ -1,14 +1,16 @@
 #include "utils.h"
 #include "inetutils.h"
+#include "define.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <string.h>
+#include <sys/select.h>
 
-#define NAME_LEN 128
 #define BUF_LEN 1024
 #define COMM_LEN 40
+#define NR_FDS 4
 
 #define DEBUG
 
@@ -97,76 +99,144 @@ int main(int argc, char **argv)
 
 /*-------- END check arguments --------*/
 
-/*-------- parse user options --------*/
+/*-------- parse user commands --------*/
 
-	fgets(buf, BUF_LEN, stdin);
+	fd_set rfds;
+	FD_ZERO(&rfds);
+	int max_fd;
+	int i, fds[NR_FDS];
+	enum {stdin_fd, TCP_fd, UDP_fd, TCP_fd_chat};
 
-	if(sscanf(buf, " %s", comm)!=1)	/* no command present */
+	for(i=0; i<NR_FDS; i++)
+		fds[i]=-1;
+
+	fds[stdin_fd]=0;	/* 0 is fd for stdin */
+
+	while(1)
 	{
-		comm[0]=0;
-	}
+		for(i=0; i<NR_FDS; i++)
+			if(fds[i]>=0)
+			{
+				FD_SET(fds[i], &rfds);
+				if(fds[i]>max_fd)
+					max_fd=fds[i];
+			}
 
-	if(strcmp(comm, "join")==0)
-	{
-		#ifdef DEBUG
-		puts("join");
-		#endif
-	}
-	else if(strcmp(comm, "leave")==0)
-	{
-		#ifdef DEBUG
-		puts("leave");
-		#endif
-	}
-	else if(strcmp(comm, "find")==0)
-	{
-		#ifdef DEBUG
-		puts("find");
-		#endif
+		i = select(max_fd+1, &rfds, NULL, NULL, NULL);
 
-		if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
-			puts("> find name.surname");
 
-	}
-	else if(strcmp(comm, "connect")==0)
-	{
-		#ifdef DEBUG
-		puts("connect");
-		#endif
-
-		if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
-			puts("> connect name.surname");
-
-	}
-	else if(strcmp(comm, "disconnect")==0)
-	{
-		#ifdef DEBUG
-		puts("disconnect");
-		#endif
-	}
-	else if(strcmp(comm, "message")==0)
-	{
-		#ifdef DEBUG
-		puts("message");
-		#endif
-
-		if(sscanf(buf, " %*s %[^\n]", buf)!=1)
-			puts("> message string");
-		else
+		if(FD_ISSET(fds[UDP_fd], &rfds))
 		{
-			printf("%s\n", buf);
+			#ifdef DEBUG
+			puts("a wild UDP connection appeared");
+			#endif
+
 		}
-	}
-	else if(strcmp(comm, "exit")==0)
-	{
-		#ifdef DEBUG
-		puts("exit");
-		#endif
-	}
-	else
-	{
-		printf("Unknown command '%s'\n", comm);
-	}
+
+		if(FD_ISSET(fds[TCP_fd], &rfds))	/* new chat request */
+		{
+			#ifdef DEBUG
+			puts("TCP connection came in for TCP_fd");
+			#endif
+
+		}
+
+		if(FD_ISSET(fds[TCP_fd_chat], &rfds))	/* incoming message on chat */
+		{
+			#ifdef DEBUG
+			puts("TCP connection came in for TCP_fd CHAT");
+			#endif
+
+			MSS(buf);
+		}
+
+		if(FD_ISSET(fds[stdin_fd], &rfds))	/* something was written */
+		{
+			#ifdef DEBUG
+			puts("fgets() read to buffer");
+			#endif
+
+			if(fgets(buf, BUF_LEN, stdin)==0)
+			{
+				#ifdef DEBUG
+				puts("fgets() error");
+				#endif
+				/*do something about it*/
+			}
+
+
+			if(sscanf(buf, " %s", comm)!=1)	/* no command present */
+			{
+				comm[0]=0;
+			}
+
+			if(strcmp(comm, "join")==0)
+			{
+				#ifdef DEBUG
+				puts("join");
+				#endif
+			}
+			else if(strcmp(comm, "leave")==0)
+			{
+				#ifdef DEBUG
+				puts("leave");
+				#endif
+			}
+			else if(strcmp(comm, "find")==0)
+			{
+				#ifdef DEBUG
+				puts("find");
+				#endif
+
+				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
+					puts("> find name.surname");
+
+			}
+			else if(strcmp(comm, "connect")==0)
+			{
+				#ifdef DEBUG
+				puts("connect");
+				#endif
+
+				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
+					puts("> connect name.surname");
+
+			}
+			else if(strcmp(comm, "disconnect")==0)
+			{
+				#ifdef DEBUG
+				puts("disconnect");
+				#endif
+			}
+			else if(strcmp(comm, "message")==0)
+			{
+				#ifdef DEBUG
+				puts("message");
+				#endif
+
+				if(sscanf(buf, " %*s %[^\n]", buf)!=1)
+					puts("> message string");
+				else
+				{
+					printf("%s\n", buf);
+				}
+			}
+			else if(strcmp(comm, "exit")==0)
+			{
+				#ifdef DEBUG
+				puts("exit");
+				#endif
+
+				/*disconnect, free, etc*/
+
+				exit(0);
+			}
+			else
+			{
+				printf("Unknown command '%s'\n", comm);
+			}
+		} /* FD_ISSET(fds[stdin_fd], &rfds) */
+	} /* while */
 
 
 	exit(0);
