@@ -106,6 +106,12 @@ int main(int argc, char **argv)
 	int max_fd;
 	int i, fds[NR_FDS];
 	enum {stdin_fd, TCP_fd, UDP_fd, TCP_fd_chat};
+	enum {false, true};
+	char connected, chatting;
+	int err;
+
+	connected = false;
+	chatting = false;
 
 	for(i=0; i<NR_FDS; i++)
 		fds[i]=-1;
@@ -138,6 +144,24 @@ int main(int argc, char **argv)
 			#ifdef DEBUG
 			puts("TCP connection came in for TCP_fd");
 			#endif
+
+			if(chatting==false)
+			{
+				fds[TCP_fd_chat] = accept(fds[TCP_fd], NULL/*change this*/, NULL/*change this*/);
+			}
+			else
+			{
+				err = accept(fds[TCP_fd], NULL, NULL);
+				if(err==-1)
+				{
+					/*do something about it*/
+				}
+				else
+				{
+					close(err);
+				}
+
+			}
 
 		}
 
@@ -175,6 +199,30 @@ int main(int argc, char **argv)
 				#ifdef DEBUG
 				puts("join");
 				#endif
+
+				if(connected==true)
+				{
+					puts("> You have joined already.");
+				}
+				else
+				{
+					fds[UDP_fd] = 2/*join(...)*/;
+
+					if(fds[UDP_fd]<0)
+					{
+						/*do something about it*/
+					}
+					else
+					{
+						connected = true;
+						fds[TCP_fd] = 3/*TCP_create(...)*/;
+						if(listen(fds[TCP_fd], 2)==-1)
+						{
+							/*do something about it*/
+						}
+					}
+				}
+
 			}
 			else if(strcmp(comm, "leave")==0)
 			{
