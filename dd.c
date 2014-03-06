@@ -1,6 +1,10 @@
 #include "utils.h"
 #include "inetutils.h"
 #include "define.h"
+#include "TCPlib.h"
+#include "database.h"
+#include "interface.h"
+#include "incoming.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -24,6 +28,7 @@ int main(int argc, char **argv)
 	unsigned long ddIP;
 	char *username, name[NAME_LEN], surname[NAME_LEN];
 	char buf[BUF_LEN], comm[COMM_LEN];
+	person *me;
 
 	if(saIPs==NULL)
 	{
@@ -53,8 +58,6 @@ int main(int argc, char **argv)
 		{
 			exit(3);
 		}
-
-	/*crete myself as a person. name and surname buffers will be reused*/
 
 		ddIP = atoh(argv[2]);
 		if(ddIP==0)
@@ -86,6 +89,8 @@ int main(int argc, char **argv)
 	}
 
 
+	me = personcreate(ddIP, saport, talkport, name, surname);
+
 	#ifdef DEBUG
 
 	printf("username: %s.%s\n", name, surname);
@@ -109,6 +114,8 @@ int main(int argc, char **argv)
 	enum {false, true};
 	char connected, chatting;
 	int err;
+	struct sockaddr_in caller_addr;
+	unsigned int caller_addr_size;
 
 	connected = false;
 	chatting = false;
@@ -120,6 +127,7 @@ int main(int argc, char **argv)
 
 	while(1)
 	{
+		err = 0;
 		for(i=0; i<NR_FDS; i++)
 			if(fds[i]>=0)
 			{
@@ -147,7 +155,9 @@ int main(int argc, char **argv)
 
 			if(chatting==false)
 			{
-				fds[TCP_fd_chat] = accept(fds[TCP_fd], NULL/*change this*/, NULL/*change this*/);
+				caller_addr_size = sizeof(caller_addr);
+				fds[TCP_fd_chat] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
+				chatting = true;
 			}
 			else
 			{
@@ -170,6 +180,8 @@ int main(int argc, char **argv)
 			#ifdef DEBUG
 			puts("TCP connection came in for TCP_fd CHAT");
 			#endif
+
+			/*preprocess received string (read till \n)*/
 
 			MSS(buf);
 		}
@@ -206,7 +218,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					fds[UDP_fd] = 2/*join(...)*/;
+					fds[UDP_fd] = join(me, saIP, saport);
 
 					if(fds[UDP_fd]<0)
 					{
@@ -215,7 +227,7 @@ int main(int argc, char **argv)
 					else
 					{
 						connected = true;
-						fds[TCP_fd] = 3/*TCP_create(...)*/;
+						fds[TCP_fd] = TCPcreate(ddIP, talkport);
 						if(listen(fds[TCP_fd], 2)==-1)
 						{
 							/*do something about it*/
