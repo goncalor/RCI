@@ -60,9 +60,10 @@ UDPmssinfo * UDPmssinfocreate(char * message, unsigned short port, unsigned long
 {
 	UDPmssinfo * new = (UDPmssinfo *) calloc(1, sizeof(UDPmssinfo));
 	new->message = (char *)	malloc(strlen(message)*sizeof(char));
+	strcpy(new->message, message);
 	new->sender.sin_family=AF_INET;
 	new->sender.sin_addr.s_addr=htonl(IP);
-	new->sender.sin_family=htons(port);
+	new->sender.sin_port=htons(port);
 	return new;
 }
 
