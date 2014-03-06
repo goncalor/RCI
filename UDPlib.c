@@ -5,7 +5,7 @@
 #include "UDPlib.h"
 
 
-#define BUF_LEN 1024 /*Ver max size of UDP Package*/
+#define BUF_LEN 5120 /*Ver max size of UDP Package*/
 
 
 struct UDPmssinfo {
@@ -30,9 +30,9 @@ int UDPcreate(unsigned short port)
 	addr.sin_port=htons(port);
 
 	if(bind(UDPfd,(struct sockaddr*)&addr,sizeof(addr))==-1)
-		return -1;
+		return -2;
 
-	return 0;
+	return UDPfd;
 }
 
 int UDPclose()

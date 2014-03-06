@@ -7,7 +7,7 @@ typedef struct UDPmssinfo UDPmssinfo;
 /*******************************************************************
 Creates a socket to use with UDP and binds it to the port specified
 
-Returns 0 on sucess, -1 otherwise and errno is set.
+Returns the UDP file descriptor on sucess, -1 otherwise and errno is set.
 *******************************************************************/
 int UDPcreate(unsigned short port);/*should verify if port>1024*/
 

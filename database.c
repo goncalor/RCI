@@ -6,20 +6,15 @@
 #define BUF_LEN 1024
 
 
-struct db {
 
-	list **	db_table;
-	int auth; /*has value 1 if it is the authorized SNP, 0 otherwise*/
-
-};
 
 struct person {
 
 	unsigned long IP;
-        unsigned short DNSport;
+	unsigned short DNSport;
 	unsigned short TCPport;
-        char * name;
-        char * surname;
+	char * name;
+	char * surname;
 };
 
 
@@ -30,6 +25,18 @@ db * dbcreate(int Auth)
 	new->auth=Auth;
 
 	return new;
+}
+
+
+
+void Iamtheauth(db*mydb)
+{
+	mydb->auth=1;
+}
+
+void Iamnottheauth(db*mydb)
+{
+	mydb->auth=0;
 }
 
 int dbinsertperson(db * mydb, person * toinsert)
@@ -77,4 +84,29 @@ int personcmp(person * one, person * two)
 {
 	return one->IP==two->IP && one->DNSport==two->DNSport;
 
+}
+
+unsigned long getpersonIP(person*p)
+{
+	return p->IP;
+}
+
+unsigned short getpersonUDPport(person*p)
+{
+	return p->DNSport;
+}
+
+unsigned short getpersonTCPport(person*p)
+{
+	return p->TCPport;
+}
+
+char * getpersonname(person*p)
+{
+	return p->name;
+}
+
+char * getpersonsurname(person*p)
+{
+	return p->surname;
 }
