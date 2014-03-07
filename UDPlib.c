@@ -81,11 +81,15 @@ UDPmssinfo * UDPrecv()
 	struct sockaddr_in src_addr;
 	unsigned int addrlen=sizeof(src_addr);
 	char buffer[BUF_LEN];
+	int mess_len;
 		#ifdef DEBUG
 			printf("UDPfd=%d\n",UDPfd);
 		#endif
-	if(recvfrom(UDPfd,buffer,BUF_LEN,0,(struct sockaddr*)&src_addr,&addrlen)==-1)
+	mess_len = recvfrom(UDPfd,buffer,BUF_LEN,0,(struct sockaddr*)&src_addr,&addrlen);
+	if(mess_len==-1)
 		return NULL;
+
+	buffer[mess_len]='\0';
 
 	return UDPmssinfocreate(buffer, src_addr.sin_port, src_addr.sin_addr.s_addr);
 
