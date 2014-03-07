@@ -18,11 +18,11 @@ struct person {
 };
 
 
-db * dbcreate(int Auth)
+
+db * dbcreate()
 {
 	db * new=(db*)calloc(1,sizeof(db));
 	new->db_table=(list **)calloc(255,sizeof(void*));/*no need to initialize the List because we use calloc*/
-	new->auth=Auth;
 
 	return new;
 }
@@ -65,7 +65,9 @@ person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short T
 {
 	person * new = (person *)  malloc(sizeof(person));
 	new->name= (char *) malloc(sizeof(char)*(strlen(name)+1)); 
+	strcpy(new->name,name);
 	new->surname= (char *) malloc(sizeof(char)*(strlen(surname)+1)); 
+	strcpy(new->surname,surname);
 	new->IP=IP;
 	new->DNSport=DNSport;
 	new->TCPport=TCPport;

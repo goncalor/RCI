@@ -2,7 +2,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "UDPlib.h"
+#include "define.h"
 
 
 #define BUF_LEN 5120 /*Ver max size of UDP Package*/
@@ -30,7 +32,7 @@ int UDPcreate(unsigned short port)
 	addr.sin_port=htons(port);
 
 	if(bind(UDPfd,(struct sockaddr*)&addr,sizeof(addr))==-1)
-		return -2;
+		return -1;
 
 	return UDPfd;
 }
@@ -78,7 +80,9 @@ UDPmssinfo * UDPrecv()
 	struct sockaddr_in src_addr;
 	unsigned int addrlen=sizeof(src_addr);
 	char buffer[BUF_LEN];
-
+		#ifdef DEBUG
+			printf("UDPfd=%d\n",UDPfd);
+		#endif
 	if(recvfrom(UDPfd,buffer,BUF_LEN,0,(struct sockaddr*)&src_addr,&addrlen)==-1)
 		return NULL;
 

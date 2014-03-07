@@ -15,15 +15,56 @@ typedef struct db {
 typedef struct person person;
 
 
-int personcmp(person * one, person * two);
-db* dbcreate(int Auth);
+
+/*******************************************************************
+Allocs memory to the database; 
+
+Returns the pointer to the database
+*******************************************************************/
+db* dbcreate();
+
+/*******************************************************************
+Sets the database flag to Auth 
+*******************************************************************/
 void Iamtheauth(db*mydb);
+
+/*******************************************************************
+Sets the database flag to not Auth 
+*******************************************************************/
 void Iamnottheauth(db*mydb);
+
+
+/*******************************************************************
+Inserts person in the database
+Returns -1 on error, 0 on sucess
+*******************************************************************/
 int dbinsertperson(db*,person*);
+
+/*******************************************************************
+Removes person from the database
+Returns -1 on error, 0 on sucess
+*******************************************************************/
 int dbrmperson(db*,person*);
-person * personcreate(unsigned long, unsigned short, unsigned short, char*,char*);
+
+/*******************************************************************
+Creates a person, allocs memory and inicializes it
+Returns the pointer to the person
+*******************************************************************/
+person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short TCPport, char * name, char * surname);
+
+/*******************************************************************
+Frees the memory of a person
+*******************************************************************/
 void personfree(person*);
-int personcmp(person*,person*);
+
+/*******************************************************************
+Returns true if the person has the same IP and same DNSport
+Returns false otherwise
+*******************************************************************/
+int personcmp(person * one, person * two);
+
+
+/*These are self explanatory*/
 unsigned long getpersonIP(person*p);
 unsigned short getpersonUDPport(person*p);
 unsigned short getpersonTCPport(person*p);

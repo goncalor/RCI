@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 	}
 
 
-	me = personcreate(ddIP, saport, talkport, name, surname);
+	me = personcreate(ddIP, dnsport, talkport, name, surname);
 
 	#ifdef DEBUG
 

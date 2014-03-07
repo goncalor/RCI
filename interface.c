@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include "define.h"
 
 
 #define BUF_LEN 1024
@@ -22,17 +22,30 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 	struct in_addr * ip_aux;
 	ip_aux = (struct in_addr *) &myIPn;	
 /*send info to SA*/
+		#ifdef DEBUG
+			puts("creating UDP");
+		#endif
 	if((fdUDP=UDPcreate(getpersonUDPport(me)))==-1)
 		return -1;
 
 	sprintf(info,"REG %s.%s;%s;%hu;%hu", getpersonname(me),getpersonsurname(me),inet_ntoa(*ip_aux),getpersonTCPport(me), getpersonUDPport(me));
+		#ifdef DEBUG
+			printf("Sending: %s\nUDPfd=%d\n",info,fdUDP);
+		#endif
 	if(UDPsend(saIP,saport,info)==-1)
 		return -1;
 
 	/*Now wait for answer from server?*/
-
+			#ifdef DEBUG
+			puts("Waiting for answer from server");
+		#endif
 	/*It will block if no answer*/
 	UDPmssinfo * received = UDPrecv();
+	if(received==NULL)
+		return -2;
+	#ifdef DEBUG
+			printf("Received:%s",UDPgetmss(received));
+		#endif
 
 	if(UDPcmpsender(saIP,saport,received)!=0)
 		return -2;
@@ -47,6 +60,9 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 
 	if(personcmp(me,auth)==1)
 	{
+		#ifdef DEBUG
+			puts("I am the auth");
+		#endif
 		/*I am the auth
 		Steps:
 		-Insert myself in the Database?
@@ -64,6 +80,9 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 	}
 	else 
 	{
+		#ifdef DEBUG
+			puts("I am not the auth");
+		#endif
 		/*I am not the auth
 
 		Steps:
@@ -78,7 +97,8 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 		UDPmssinfo * LST= UDPrecv();
 		if(UDPcmpsender(getpersonIP(auth),getpersonUDPport(auth),LST)!=0)
 			return -5; /* WTF just happened?*/
-		db * mydb = dbcreate(0);			
+		db * mydb = dbcreate();			
+		Iamnottheauth(mydb);
 		personfree(auth);
 		char * message= UDPgetmss(LST);
 		char buffer[BUF_LEN];
