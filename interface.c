@@ -44,7 +44,7 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 	if(received==NULL)
 		return -2;
 	#ifdef DEBUG
-			printf("Received:%s",UDPgetmss(received));
+			printf("Received:%s\n\n",UDPgetmss(received));
 		#endif
 
 	if(UDPcmpsender(saIP,saport,received)!=0)
