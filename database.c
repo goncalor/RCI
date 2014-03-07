@@ -39,6 +39,12 @@ void Iamnottheauth(db*mydb)
 	mydb->auth=0;
 }
 
+int AmItheauth(db*mydb)
+{
+	return mydb->auth;
+}
+
+
 int dbinsertperson(db * mydb, person * toinsert)
 {
 	mydb->db_table[(int)toinsert->name[0]]=LSTadd(mydb->db_table[(int)toinsert->name[0]],(person *)toinsert);

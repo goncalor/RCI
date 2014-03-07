@@ -14,7 +14,7 @@
 #define BUF_LEN 1024
 
 
-int join(person * me, unsigned long saIP, unsigned short saport)
+int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 {
 	char info[BUF_LEN];
 	int fdUDP;
@@ -70,7 +70,7 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 		-free the auth
 		-return
 	*/
-	db * mydb = dbcreate();	
+	
 	if(dbinsertperson(mydb,me)==-1)
 		return -3;
 	Iamtheauth(mydb);
@@ -94,10 +94,10 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 		- Return*/
 		if(UDPsend(getpersonIP(auth),getpersonUDPport(auth),info)==-1)
 			return -4;
-		UDPmssinfo * LST= UDPrecv();
+		UDPmssinfo * LST= UDPrecv();/*Maybe there is a problem here.we could only receive part of the message*/
 		if(UDPcmpsender(getpersonIP(auth),getpersonUDPport(auth),LST)!=0)
 			return -5; /* WTF just happened?*/
-		db * mydb = dbcreate();			
+		mydb = dbcreate();			
 		Iamnottheauth(mydb);
 		personfree(auth);
 		char * message= UDPgetmss(LST);
@@ -149,6 +149,75 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 		return fdUDP;
 	}
 }
+
+
+
+int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
+{
+	if(AmItheauth(mydb)==1)
+	{
+
+	}
+
+	else
+	{
+
+
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

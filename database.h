@@ -33,6 +33,10 @@ Sets the database flag to not Auth
 *******************************************************************/
 void Iamnottheauth(db*mydb);
 
+/*******************************************************************
+Returns 1 or 0 if we are the authorized SNP or not
+*******************************************************************/
+int AmItheauth(db*mydb);
 
 /*******************************************************************
 Inserts person in the database

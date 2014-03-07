@@ -29,6 +29,7 @@ int main(int argc, char **argv)
 	char *username, name[NAME_LEN], surname[NAME_LEN];
 	char buf[BUF_LEN], comm[COMM_LEN];
 	person *me;
+	db * mydb =  dbcreate();
 
 	if(saIPs==NULL)
 	{
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					fds[UDP_fd] = join(me, saIP, saport);
+					fds[UDP_fd] = join(me, saIP, saport, mydb);
 
 					if(fds[UDP_fd]<0)
 					{
