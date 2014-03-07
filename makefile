@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g 
 DEPS = TCPlib.h UDPlib.h utils.h inetutils.h database.h item.h list.h interface.h incoming.h define.h
 OBJ = dd.o utils.o inetutils.o TCPlib.o UDPlib.o list.o database.o interface.o incoming.o
 EDITOR = gedit

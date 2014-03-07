@@ -70,7 +70,7 @@ int join(person * me, unsigned long saIP, unsigned short saport)
 		-free the auth
 		-return
 	*/
-	db * mydb = dbcreate(1);	
+	db * mydb = dbcreate();	
 	if(dbinsertperson(mydb,me)==-1)
 		return -3;
 	Iamtheauth(mydb);
