@@ -1,4 +1,6 @@
 #include "define.h"
+#include "UDPlib.h"
+#include "string.h"
 #include <stdio.h>
 
 /* prints incoming message. str is altered to be only the message (without protocol words. returns 0 on success. returns -1 if received message is badly formatted */
@@ -11,6 +13,17 @@ int MSS(char *str)
 
 	printf("%s %s: %s", name, surname, str);	
 
+	return 0;
+}
+
+
+int OK(unsigned long IP,unsigned short port)
+{
+	UDPmssinfo * received = UDPrecv();
+	if(UDPcmpsender(IP,port, received)!=0)
+		return -1;
+	if(strncmp("OK",UDPgetmss(received),2)!=0)
+		return -1;
 	return 0;
 }
 

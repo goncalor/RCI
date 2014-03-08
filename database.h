@@ -62,10 +62,18 @@ Returns the pointer to the updated person
 *******************************************************************/
 person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname);
 
+
+
+
 /*******************************************************************
 Frees the memory of a person
 *******************************************************************/
 void personfree(person*);
+
+/*******************************************************************
+Frees the database and all info on it.
+*******************************************************************/
+void dbfree(db*mydb);
 
 /*******************************************************************
 Returns true if the person has the same IP and same DNSport

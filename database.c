@@ -97,6 +97,13 @@ void personfree(person * tofree)
 	free(tofree);
 }
 
+void dbfree(db*mydb)
+{
+
+
+}
+
+
 int personcmp(person * one, person * two)
 {
 	return one->IP==two->IP && one->DNSport==two->DNSport;

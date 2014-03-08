@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "define.h"
+#include "incoming.h"
 
 
 #define BUF_LEN 1024
@@ -139,7 +140,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			{
 				for(aux_list = mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
 				{				
-					aux_person = LSTgetitem(mydb->db_table[i]);
+					aux_person = LSTgetitem(aux_list); /*Changed from mydb->db_table[i] to aux_list -> test whenever possible*/
 					if(personcmp(aux_person,me)!=1)
 					{
 						if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),info)==-1)
@@ -257,15 +258,129 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 
 int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 {
+	char buffer[BUF_LEN];
+	char * surname = getpersonsurname(me);
+	int db_index = (int)surname[0];
 	if(AmItheauth(mydb)==1)
 	{
+		#ifdef DEBUG
+			puts("I am leaving and I am the auth");
+		#endif
+		if(LSTfollowing(mydb->db_table[db_index ])==NULL)
+		{
+			#ifdef DEBUG
+				puts("I am the only person with this surname");
+			#endif
+			sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+			if(UDPsend(saIP, saport,buffer)==-1)
+			{
+				return -1;
+			}
+			if(OK(saIP,saport)!=0)
+				return -1;
+			
+			/*Free the db*/
+			dbfree(mydb);
+			return 0;
+
+		}
+		#ifdef DEBUG
+			puts("I am not the only person with this surname");
+		#endif
+
+		list * aux_list;
+		person * aux_person;
+		for(aux_list = mydb->db_table[db_index]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+		{				
+			aux_person = LSTgetitem(aux_list);
+			if(personcmp(aux_person,me)!=1)
+			{
+				unsigned long newauthIP = htonl(getpersonIP(aux_person)); /*my IP in network byte order*/
+				struct in_addr * ip_aux;
+				ip_aux = (struct in_addr *) &newauthIP;	
+				
+				sprintf(buffer,"DNS %s.%s;%s;%hu",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux),getpersonUDPport(aux_person));
+
+		#ifdef DEBUG
+			printf("Sending %s to SA \n",buffer);
+		#endif				
+
+				if(UDPsend(saIP,saport,buffer)==-1)
+					return -1;
+				if(OK(saIP,saport)!=0)
+					return -1;
+
+		#ifdef DEBUG
+			printf("Sending %s to new auth \n",buffer);
+		#endif		
+
+				if(UDPsend(saIP,saport,buffer)==-1)
+					return -1;
+				if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
+					return -1;
+				
+				break;
+			}
+		}
+		if(aux_list==NULL)
+			return -1;
+
+		sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+
+		#ifdef DEBUG
+			printf("Sending %s to everyone on the DB with my surname \n",buffer);
+		#endif		
+
+		for(; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+		{				
+			aux_person = LSTgetitem(aux_list);
+			if(personcmp(aux_person,me)!=1)
+			{
+				if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
+					return -1;
+				if(OK(getpersonIP(aux_person),getpersonIP(aux_person))!=0)
+					return -1;
+			}
+		}
+			
+			
+			/*Free the db*/
+		dbfree(mydb);
+
+		return 0;
+
 
 	}
-
 	else
 	{
+		#ifdef DEBUG
+			puts("I am leaving and I am not the auth");
+		#endif
+		sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+		list * aux_list;
+		person * aux_person;
+
+		#ifdef DEBUG
+			printf("Sending %s to everyone on the DB with my surname \n",buffer);
+		#endif		
+
+		for(aux_list = mydb->db_table[db_index]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+		{				
+			aux_person = LSTgetitem(aux_list);
+			if(personcmp(aux_person,me)!=1)
+			{
+				if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
+					return -1;
+				if(OK(getpersonIP(aux_person),getpersonIP(aux_person))!=0)
+					return -1;
+			}
+		}
 
 
+		/*Free the db*/
+		dbfree(mydb);
+
+		return 0;
 	}
 }
 

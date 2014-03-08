@@ -223,6 +223,9 @@ int main(int argc, char **argv)
 					if(fds[UDP_fd]<0)
 					{
 						/*do something about it*/
+						#ifdef DEBUG
+						printf("join Error:%d",fds[UDP_fd]);
+						#endif
 					}
 					else
 					{
@@ -241,6 +244,17 @@ int main(int argc, char **argv)
 				#ifdef DEBUG
 				puts("leave");
 				#endif
+				if(connected==true)
+				{
+					/*Disconnect;*/
+				}
+				if(chatting==true)
+				{
+					/*Close chat*/
+				}
+
+				leave(me, saIP, saport, mydb);
+
 			}
 			else if(strcmp(comm, "find")==0)
 			{
