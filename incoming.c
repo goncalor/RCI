@@ -24,6 +24,7 @@ int OK(unsigned long IP,unsigned short port)
 		return -1;
 	if(strncmp("OK",UDPgetmss(received),2)!=0)
 		return -1;
+	UDPfreemssinfo(received);
 	return 0;
 }
 

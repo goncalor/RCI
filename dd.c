@@ -247,13 +247,23 @@ int main(int argc, char **argv)
 				if(connected==true)
 				{
 					/*Disconnect;*/
-				}
-				if(chatting==true)
-				{
-					/*Close chat*/
-				}
+					if(chatting==true)
+					{
+						/*Close chat*/
 
-				leave(me, saIP, saport, mydb);
+						chatting=false;
+					}
+
+					if(leave(me, saIP, saport, mydb)!=0)
+					{
+									/*do something about it*/		
+					}
+					connected=false;	
+				}
+				else 
+				{
+					puts("You are not connected.");
+				}
 
 			}
 			else if(strcmp(comm, "find")==0)

@@ -99,8 +99,16 @@ void personfree(person * tofree)
 
 void dbfree(db*mydb)
 {
-
-
+	int i;
+	for(i=0;i<255;i++)
+		{
+			if(mydb->db_table[i]!=NULL)
+			{
+				LSTdestroy(mydb->db_table[i], (void (*)(Item))personfree);
+			}
+		}
+	free(mydb->db_table);
+	free(mydb);
 }
 
 

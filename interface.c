@@ -58,6 +58,9 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 
 	if(sscanf(UDPgetmss(received),"DNS %[^.].%[^;];%[^;];%hu",name, surname,IP,&UDPport)!=4)
 		return -11;
+
+	UDPfreemssinfo(received);
+
 	person * auth = personcreate(atoh(IP),UDPport,0,name,surname);
 
 	if(personcmp(me,auth)==1)
@@ -281,6 +284,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			
 			/*Free the db*/
 			dbfree(mydb);
+			UDPclose();
 			return 0;
 
 		}
@@ -346,7 +350,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			
 			/*Free the db*/
 		dbfree(mydb);
-
+		UDPclose();
 		return 0;
 
 
@@ -379,7 +383,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 
 		/*Free the db*/
 		dbfree(mydb);
-
+		UDPclose();
 		return 0;
 	}
 }
