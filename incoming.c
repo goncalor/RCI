@@ -14,4 +14,9 @@ int MSS(char *str)
 	return 0;
 }
 
+/*
+QRY()
+{
 
+}
+*/

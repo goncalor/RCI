@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 	int err;
 	struct sockaddr_in caller_addr;
 	unsigned int caller_addr_size;
+	person *interloc=NULL;
 
 	connected = false;
 	chatting = false;
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
 		if(FD_ISSET(fds[UDP_fd], &rfds))
 		{
 			#ifdef DEBUG
-			puts("a wild UDP connection appeared");
+			puts("UDP connection came in for UDP_fd");
 			#endif
 
 		}
@@ -171,9 +172,7 @@ int main(int argc, char **argv)
 				{
 					close(err);
 				}
-
 			}
-
 		}
 
 		if(FD_ISSET(fds[TCP_fd_chat], &rfds))	/* incoming message on chat */
@@ -251,7 +250,24 @@ int main(int argc, char **argv)
 
 				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
 					puts("> find name.surname");
+				else if(find(saIP, saport, name, surname, interloc)!=0)
+				{
+					#ifdef DEBUG
+					puts("find ended abruptly");
+					#endif
 
+					/*do something about it*/
+				}
+				else
+				{
+					printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
+
+					#ifdef DEBUG
+					printf("> Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc) );
+					#endif
+
+					personfree(interloc);
+				}
 			}
 			else if(strcmp(comm, "connect")==0)
 			{
