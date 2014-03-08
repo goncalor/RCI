@@ -57,6 +57,12 @@ Returns the pointer to the person
 person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short TCPport, char * name, char * surname);
 
 /*******************************************************************
+Updates an existing person p
+Returns the pointer to the updated person
+*******************************************************************/
+person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname);
+
+/*******************************************************************
 Frees the memory of a person
 *******************************************************************/
 void personfree(person*);
@@ -74,11 +80,5 @@ unsigned short getpersonUDPport(person*p);
 unsigned short getpersonTCPport(person*p);
 char * getpersonname(person*p);
 char * getpersonsurname(person*p);
-
-
-
-
-
-
 
 #endif

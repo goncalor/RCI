@@ -6,8 +6,6 @@
 #define BUF_LEN 1024
 
 
-
-
 struct person {
 
 	unsigned long IP;
@@ -79,6 +77,17 @@ person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short T
 	new->TCPport=TCPport;
 	
 	return new;
+}
+
+person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname)
+{
+	strcpy(p->name, name);
+	strcpy(p->surname, surname);
+	p->IP=IP;
+	p->DNSport=DNSport;
+	p->TCPport=TCPport;
+
+	return p;
 }
 
 void personfree(person * tofree)
