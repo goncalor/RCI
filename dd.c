@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 
 					close(fds[TCP_fd]);	/* accept no more connections */
 					fds[TCP_fd] = -1;
-//					fds[UDP_fd] = -1;
+					fds[UDP_fd] = -1;
 
 					if(chatting==true)
 					{
