@@ -130,6 +130,7 @@ int main(int argc, char **argv)
 	while(1)
 	{
 		err = 0;
+		max_fd = 0;
 		for(i=0; i<NR_FDS; i++)
 			if(fds[i]>=0)
 			{
@@ -247,22 +248,28 @@ int main(int argc, char **argv)
 				if(connected==true)
 				{
 					/*Disconnect;*/
+
+					close(fds[TCP_fd]);	/* accept no more connections */
+					fds[TCP_fd] = -1;
+//					fds[UDP_fd] = -1;
+
 					if(chatting==true)
 					{
-						/*Close chat*/
+						close(fds[TCP_fd_chat]);
+						fds[TCP_fd_chat] = -1;
 
 						chatting=false;
 					}
 
 					if(leave(me, saIP, saport, mydb)!=0)
 					{
-									/*do something about it*/		
+						/*do something about it*/		
 					}
-					connected=false;	
+					connected=false;
 				}
 				else 
 				{
-					puts("You are not connected.");
+					puts("> You are not connected.");
 				}
 
 			}
@@ -287,7 +294,7 @@ int main(int argc, char **argv)
 					printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
 
 					#ifdef DEBUG
-					printf("> Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc) );
+					printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc) );
 					#endif
 
 					personfree(interloc);
