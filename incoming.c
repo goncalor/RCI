@@ -11,7 +11,7 @@ int MSS(char *str)
 	if(sscanf(str, "MSS %[^.]%[^;];%[^\n]", name, surname, str)!=3)
 		return -1;
 
-	printf("%s %s: %s", name, surname, str);	
+	printf("%s %s: %s\n", name, surname, str);	
 
 	return 0;
 }

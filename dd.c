@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					close(err);
+					close(err);	/* close connection right away to indicate we are busy */
 				}
 			}
 		}
@@ -230,11 +230,24 @@ int main(int argc, char **argv)
 					}
 					else
 					{
+						#ifdef DEBUG
+						printf("creating TCP server on %08lX:%d\n", ddIP, talkport);
+						#endif
+
 						connected = true;
 						fds[TCP_fd] = TCPcreate(ddIP, talkport);
+						if(fds[TCP_fd]<0)
+						{
+							#ifdef DEBUG
+							puts("Could not create TCP server");
+							#endif
+						}
 						if(listen(fds[TCP_fd], 2)==-1)
 						{
 							/*do something about it*/
+							#ifdef DEBUG
+							printf("listen()ing to port %d failed", talkport);
+							#endif
 						}
 					}
 				}
@@ -308,7 +321,19 @@ int main(int argc, char **argv)
 
 				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
 					puts("> connect name.surname");
-
+				else
+				{
+					if(chatting==false)
+					{
+						/*do things*/
+						/*fds[TCP_fd_chat] = ;*/
+						chatting=true;
+					}
+					else
+					{
+						puts("> You are connected already. Use leave before connecting again.");
+					}
+				}
 			}
 			else if(strcmp(comm, "disconnect")==0)
 			{
@@ -322,16 +347,21 @@ int main(int argc, char **argv)
 				puts("message");
 				#endif
 
-			/*verify if user is connected!*/
-
 				if(sscanf(buf, " %*s %[^\n]", buf)!=1)
 					puts("> message string");
 				else
 				{
-					if(message(fds[TCP_fd_chat], buf)==0)
-						printf("%s\n", buf);
+					if(chatting==true)
+					{
+						if(message(fds[TCP_fd_chat], buf, me)==0)
+							printf("%s\n", buf);
+						else
+							puts("> Unable to send message");
+					}
 					else
-						puts("> Unable to send message");
+					{
+						puts("> You are not connected. You must connect first.");
+					}
 				}
 			}
 			else if(strcmp(comm, "exit")==0)

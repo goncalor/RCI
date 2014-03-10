@@ -3,14 +3,15 @@
 #include "list.h"
 #include "UDPlib.h"
 #include "inetutils.h"
+#include "define.h"
+#include "incoming.h"
+#include "TCPlib.h"
 #include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "define.h"
-#include "incoming.h"
-#include "TCPlib.h"
+#include <stdlib.h>
 
 #define BUF_LEN 1024
 
@@ -388,15 +389,36 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 	}
 }
 
-/* writes message to fd and sends it via TCP. returns 0 on successful send. -1 on error and sets errno */
-int message(int fd, char *message)
+/* writes message to fd and sends it via TCP. \0 is not sent. returns 0 on successful send. -1 on error and sets errno 
+note: the user receiving the message expects it to end in \n */
+int message(int fd, char *message, person *me)
 {
 	int len;
+	char header[] = "MSS ";
+	char *str, *name, *surname;
 
-	len = strlen(message)-1; /* remove \n from sent message */
+	name = getpersonname(me);
+	surname = getpersonsurname(me);
+
+	len = strlen(header) + strlen(name) + strlen(surname) + strlen(message) + 2; /* +2 for . and ; */
+
+	str = malloc(len+1);
+	if(str==NULL)
+		return -2;
+
+	sprintf(str, "%s%s.%s;%s", header, name, surname, message);
+
+	#ifdef DEBUG
+	printf("sending %s\n", str);
+	#endif
 
 	if(TCPsend(fd, message, len)!=0)
+	{
+		free(str);
 		return -1;
+	}
+
+	free(str);
 	return 0;
 }
 
