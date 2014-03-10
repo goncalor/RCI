@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #include "define.h"
 #include "incoming.h"
-
+#include "TCPlib.h"
 
 #define BUF_LEN 1024
 
@@ -386,5 +386,17 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 		UDPclose();
 		return 0;
 	}
+}
+
+/* writes message to fd and sends it via TCP. returns 0 on successful send. -1 on error and sets errno */
+int message(int fd, char *message)
+{
+	int len;
+
+	len = strlen(message)-1; /* remove \n from sent message */
+
+	if(TCPsend(fd, message, len)!=0)
+		return -1;
+	return 0;
 }
 

@@ -322,11 +322,16 @@ int main(int argc, char **argv)
 				puts("message");
 				#endif
 
+			/*verify if user is connected!*/
+
 				if(sscanf(buf, " %*s %[^\n]", buf)!=1)
 					puts("> message string");
 				else
 				{
-					printf("%s\n", buf);
+					if(message(fds[TCP_fd_chat], buf)==0)
+						printf("%s\n", buf);
+					else
+						puts("> Unable to send message");
 				}
 			}
 			else if(strcmp(comm, "exit")==0)
