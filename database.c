@@ -97,7 +97,7 @@ void personfree(person * tofree)
 	free(tofree);
 }
 
-void dbfree(db*mydb)
+void dbclean(db*mydb)
 {
 	int i;
 	for(i=0;i<255;i++)
@@ -105,12 +105,16 @@ void dbfree(db*mydb)
 			if(mydb->db_table[i]!=NULL)
 			{
 				LSTdestroy(mydb->db_table[i], (void (*)(Item))personfree);
+				mydb->db_table[i]=NULL;
 			}
 		}
+}
+
+void dbfree(db*mydb)
+{
 	free(mydb->db_table);
 	free(mydb);
 }
-
 
 int personcmp(person * one, person * two)
 {

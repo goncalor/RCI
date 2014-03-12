@@ -77,10 +77,9 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		-return
 	*/
 	
-	if(dbinsertperson(mydb,me)==-1)
+	if(dbinsertperson(mydb,auth)==-1)
 		return -5;
 	Iamtheauth(mydb);
-	personfree(auth);
 	return fdUDP;	
 
 	}
@@ -103,7 +102,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		UDPmssinfo * LST= UDPrecv();	/*Maybe there is a problem here.we could only receive part of the message*/
 		if(UDPcmpsender(getpersonIP(auth),getpersonUDPport(auth),LST)!=0)
 			return -7; /* WTF just happened?*/
-		mydb = dbcreate();			
+			
 
 		Iamnottheauth(mydb);
 		personfree(auth);
@@ -284,7 +283,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				return -1;
 			
 			/*Free the db*/
-			dbfree(mydb);
+			dbclean(mydb);
 			UDPclose();
 			return 0;
 
@@ -350,7 +349,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			
 			
 			/*Free the db*/
-		dbfree(mydb);
+		dbclean(mydb);
 		UDPclose();
 		return 0;
 
@@ -383,7 +382,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 
 
 		/*Free the db*/
-		dbfree(mydb);
+		dbclean(mydb);
 		UDPclose();
 		return 0;
 	}

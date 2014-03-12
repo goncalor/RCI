@@ -71,7 +71,12 @@ Frees the memory of a person
 void personfree(person*);
 
 /*******************************************************************
-Frees the database and all info on it.
+Frees the database info but not the database itself
+*******************************************************************/
+void dbclean(db*mydb);
+
+/*******************************************************************
+Frees the database but not the info on it
 *******************************************************************/
 void dbfree(db*mydb);
 

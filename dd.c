@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 						{
 							/*do something about it*/
 							#ifdef DEBUG
-							printf("listen()ing to port %d failed", talkport);
+							printf("listen()ing to port %d failed\n", talkport);
 							#endif
 						}
 					}
@@ -277,6 +277,9 @@ int main(int argc, char **argv)
 					if(leave(me, saIP, saport, mydb)!=0)
 					{
 						/*do something about it*/		
+						#ifdef DEBUG
+						puts("leave ERROR");
+						#endif
 					}
 					connected=false;
 				}
@@ -371,6 +374,53 @@ int main(int argc, char **argv)
 				#endif
 
 				/*disconnect, free, etc*/
+
+
+
+				if(connected==true)
+				{
+						#ifdef DEBUG
+						puts("You are connected, disconnecting...");
+						#endif
+					/*Disconnect;*/
+
+					close(fds[TCP_fd]);	/* accept no more connections */
+					fds[TCP_fd] = -1;
+					fds[UDP_fd] = -1;
+
+					if(chatting==true)
+					{
+						#ifdef DEBUG
+						puts("You are chatting, disconnecting...");
+						#endif
+						close(fds[TCP_fd_chat]);
+						fds[TCP_fd_chat] = -1;
+
+						chatting=false;
+					}
+
+					if(leave(me, saIP, saport, mydb)!=0)
+					{
+						/*do something about it*/		
+						#ifdef DEBUG
+						puts("leave ERROR");
+						#endif
+					}
+					connected=false;
+				}
+				else 
+				{
+						#ifdef DEBUG
+						puts("You are not connected");
+						#endif
+				}
+
+				personfree(me);
+				dbfree(mydb);
+				
+				#ifdef DEBUG
+				puts("Exiting");
+				#endif
 
 				exit(0);
 			}
