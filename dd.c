@@ -248,6 +248,7 @@ int main(int argc, char **argv)
 							#ifdef DEBUG
 							printf("listen()ing to port %d failed\n", talkport);
 							#endif
+							
 						}
 					}
 				}

@@ -54,7 +54,7 @@ int dbrmperson(db*,person*);
 Creates a person, allocs memory and inicializes it
 Returns the pointer to the person
 *******************************************************************/
-person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short TCPport, char * name, char * surname);
+person * personcreate(unsigned long IP, unsigned short UDPport, unsigned short TCPport, char * name, char * surname);
 
 /*******************************************************************
 Updates an existing person p

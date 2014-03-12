@@ -9,7 +9,7 @@
 struct person {
 
 	unsigned long IP;
-	unsigned short DNSport;
+	unsigned short UDPport;
 	unsigned short TCPport;
 	char * name;
 	char * surname;
@@ -65,7 +65,7 @@ int dbrmperson(db * mydb, person * toremov)
 		mydb->db_table[(int)toremov->name[0]]=NULL;		
 	return 0;
 }
-person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short TCPport, char * name, char * surname)
+person * personcreate(unsigned long IP, unsigned short UDPport, unsigned short TCPport, char * name, char * surname)
 {
 	person * new = (person *)  malloc(sizeof(person));
 	new->name= (char *) malloc(sizeof(char)*(strlen(name)+1)); 
@@ -73,18 +73,18 @@ person * personcreate(unsigned long IP, unsigned short DNSport, unsigned short T
 	new->surname= (char *) malloc(sizeof(char)*(strlen(surname)+1)); 
 	strcpy(new->surname,surname);
 	new->IP=IP;
-	new->DNSport=DNSport;
+	new->UDPport=UDPport;
 	new->TCPport=TCPport;
 	
 	return new;
 }
 
-person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname)
+person *personupdate(person *p, unsigned long IP, unsigned short UDPport, unsigned short TCPport, char *name, char *surname)
 {
 	strcpy(p->name, name);
 	strcpy(p->surname, surname);
 	p->IP=IP;
-	p->DNSport=DNSport;
+	p->UDPport=UDPport;
 	p->TCPport=TCPport;
 
 	return p;
@@ -118,7 +118,7 @@ void dbfree(db*mydb)
 
 int personcmp(person * one, person * two)
 {
-	return one->IP==two->IP && one->DNSport==two->DNSport;
+	return one->IP==two->IP && one->UDPport==two->UDPport;
 
 }
 
@@ -129,7 +129,7 @@ unsigned long getpersonIP(person*p)
 
 unsigned short getpersonUDPport(person*p)
 {
-	return p->DNSport;
+	return p->UDPport;
 }
 
 unsigned short getpersonTCPport(person*p)

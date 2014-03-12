@@ -2,6 +2,7 @@
 #define _DEFINE_H
 
 #define NAME_LEN 128
+#define IP_LEN 16 
 #define DEBUG
 
 #endif
