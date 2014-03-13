@@ -184,7 +184,24 @@ int main(int argc, char **argv)
 
 			/*preprocess received string (read till \n)*/
 
-			MSS(buf);
+			err = TCPrecv(fds[TCP_fd_chat], buf, BUF_LEN);
+			if(err<0)
+			{
+				if(err==-2)
+				{
+					#ifdef DEBUG
+					puts("chat terminated by peer");
+					#endif
+
+					close(fds[TCP_fd_chat]);
+					fds[TCP_fd_chat] = -1;
+					chatting = 0;
+				}
+				else
+					puts("> Failed to receive some message.");
+			}
+			else
+				MSS(buf);
 		}
 
 		if(FD_ISSET(fds[stdin_fd], &rfds))	/* something was written */
@@ -248,7 +265,7 @@ int main(int argc, char **argv)
 							#ifdef DEBUG
 							printf("listen()ing to port %d failed\n", talkport);
 							#endif
-							
+
 						}
 					}
 				}
@@ -360,7 +377,7 @@ int main(int argc, char **argv)
 						if(message(fds[TCP_fd_chat], buf, me)==0)
 							printf("%s\n", buf);
 						else
-							puts("> Unable to send message");
+							puts("> Unable to send message.");
 					}
 					else
 					{

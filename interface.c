@@ -399,19 +399,19 @@ int message(int fd, char *message, person *me)
 	name = getpersonname(me);
 	surname = getpersonsurname(me);
 
-	len = strlen(header) + strlen(name) + strlen(surname) + strlen(message) + 2; /* +2 for . and ; */
+	len = strlen(header) + strlen(name) + strlen(surname) + strlen(message) + 3; /* +3 for . ; \n */
 
 	str = malloc(len+1);
 	if(str==NULL)
 		return -2;
 
-	sprintf(str, "%s%s.%s;%s", header, name, surname, message);
+	sprintf(str, "%s%s.%s;%s\n", header, name, surname, message);
 
 	#ifdef DEBUG
-	printf("sending %s\n", str);
+	printf("sending %s", str);
 	#endif
 
-	if(TCPsend(fd, message, len)!=0)
+	if(TCPsend(fd, str, len)!=0)
 	{
 		free(str);
 		return -1;
