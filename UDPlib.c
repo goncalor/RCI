@@ -7,7 +7,7 @@
 #include "define.h"
 
 
-#define BUF_LEN 5120 /*Ver max size of UDP Package*/
+#define BUF_LEN_UDP 5120 /*Ver max size of UDP Package*/
 
 
 struct UDPmssinfo {
@@ -80,14 +80,14 @@ UDPmssinfo * UDPrecv()
 {
 	struct sockaddr_in src_addr;
 	unsigned int addrlen=sizeof(src_addr);
-	char buffer[BUF_LEN];
+	char buffer[BUF_LEN_UDP];
 	int mess_len;
 
 	#ifdef DEBUG
 	printf("UDPfd=%d\n",UDPfd);
 	#endif
 
-	mess_len = recvfrom(UDPfd,buffer,BUF_LEN,0,(struct sockaddr*)&src_addr,&addrlen);
+	mess_len = recvfrom(UDPfd,buffer,BUF_LEN_UDP,0,(struct sockaddr*)&src_addr,&addrlen);
 	if(mess_len==-1)
 		return NULL;
 

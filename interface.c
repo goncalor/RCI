@@ -401,7 +401,7 @@ int message(int fd, char *message, person *me)
 
 	len = strlen(header) + strlen(name) + strlen(surname) + strlen(message) + 3; /* +3 for . ; \n */
 
-	str = malloc(len+1);
+	str = malloc(len+1);	/* +1 for */
 	if(str==NULL)
 		return -2;
 
@@ -411,7 +411,7 @@ int message(int fd, char *message, person *me)
 	printf("sending %s", str);
 	#endif
 
-	if(TCPsend(fd, str, len)!=0)
+	if(TCPsend(fd, str, len)!=0)	/* \0 is not sent */
 	{
 		free(str);
 		return -1;

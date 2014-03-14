@@ -444,7 +444,7 @@ int main(int argc, char **argv)
 			}
 			else
 			{
-				printf("Unknown command '%s'\n", comm);
+				printf("> Unknown command '%s'\n", comm);
 			}
 		} /* FD_ISSET(fds[stdin_fd], &rfds) */
 	} /* while */
