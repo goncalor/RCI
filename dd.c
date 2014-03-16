@@ -119,6 +119,8 @@ int main(int argc, char **argv)
 	unsigned int caller_addr_size;
 	person *interloc=NULL;
 
+	int v;
+
 	connected = false;
 	chatting = false;
 
@@ -147,7 +149,10 @@ int main(int argc, char **argv)
 			#ifdef DEBUG
 			puts("UDP connection came in for UDP_fd");
 			#endif
-
+			v=UDPprocess(mydb,me);
+			if(v!=0)
+				printf("UDPconnection Error: %d\n",v);
+			
 		}
 
 		if(FD_ISSET(fds[TCP_fd], &rfds))	/* new chat request */
@@ -242,7 +247,10 @@ int main(int argc, char **argv)
 					{
 						/*do something about it*/
 						#ifdef DEBUG
-						printf("join Error:%d",fds[UDP_fd]);
+						printf("join Error:%d\n\n",fds[UDP_fd]);
+
+						if(fds[UDP_fd]==-1)
+							puts("UDPcreate error");
 						#endif
 					}
 					else
@@ -315,23 +323,28 @@ int main(int argc, char **argv)
 
 				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
 					puts("> find name.surname");
-				else if(find(saIP, saport, name, surname, interloc)!=0)
+				else 
 				{
-					#ifdef DEBUG
-					puts("find ended abruptly");
-					#endif
+					v=find(saIP, saport, name, surname, interloc);
+					if(v!=0)
+					{
+						#ifdef DEBUG
+						puts("find ended abruptly");
+						printf("find returned: %d\n",v	);
+						#endif
+	
+						/*do something about it*/
+					}
+					else
+					{
+						printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
 
-					/*do something about it*/
-				}
-				else
-				{
-					printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
+						#ifdef DEBUG
+						printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc));
+						#endif
 
-					#ifdef DEBUG
-					printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc) );
-					#endif
-
-					personfree(interloc);
+						personfree(interloc);
+					}
 				}
 			}
 			else if(strcmp(comm, "connect")==0)

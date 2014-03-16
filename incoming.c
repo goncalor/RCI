@@ -2,8 +2,13 @@
 #include "UDPlib.h"
 #include "database.h"
 #include "inetutils.h"
+#include "incoming.h"
+#include <arpa/inet.h>
 #include "string.h"
 #include <stdio.h>
+
+#define BUF_LEN 1024
+
 
 /* prints incoming message. str is altered to be only the message (without protocol words. returns 0 on success. returns -1 if received message is badly formatted */
 int MSS(char *str)
@@ -37,7 +42,7 @@ int OK(unsigned long IP,unsigned short port)
 	return 0;
 }
 
-int UDPprocess(db * mydb)
+int UDPprocess(db * mydb, person * me)
 {
 	UDPmssinfo * received = UDPrecv();
 	char * mssaux = UDPgetmss(received);
@@ -61,30 +66,33 @@ int UDPprocess(db * mydb)
 	}
 	else if(strncmp("DNS",mssaux,3)==0)
 	{
-
+		if(DNS(mydb,received, me)!=0)
+			return -2;
 	}
 	else if(strncmp("QRY",mssaux,3)==0)
 	{
-
+		if(QRY(mydb,received)!=0)
+			return -3;
 	}
 	else if(strncmp("UNR",mssaux,3)==0)
 	{
-
+		if(UNR(mydb,received)!=0)
+			return -4;
 	}
 	else if(strncmp("OK",mssaux,2)==0)
 	{
 	#ifdef DEBUG
 	puts("received random Ok there must have been an error");
 	#endif
-
+		return -5;
 	}
 	else 
 	{
 		/*Unknown command*/
-
-
-
+		return -6;
 	}
+	UDPfreemssinfo(received);
+	return 0;
 }
 
 int REG(db * mydb, UDPmssinfo * received)
@@ -95,7 +103,7 @@ int REG(db * mydb, UDPmssinfo * received)
 	unsigned short TCPport;
 	unsigned short UDPport;
 	unsigned long IPh;
-	if(sscanf(UDPgetmss(received),"DNS %[^.].%[^;];%[^;];%hu;%hu",name, surname,IP,&TCPport,&UDPport)!=5)
+	if(sscanf(UDPgetmss(received),"REG %[^.].%[^;];%[^;];%hu;%hu",name, surname,IP,&TCPport,&UDPport)!=5)
 		return -1;
 	IPh=atoh(IP);
 	person * new =personcreate(IPh,UDPport,TCPport,name,surname);
@@ -105,26 +113,125 @@ int REG(db * mydb, UDPmssinfo * received)
 	if(UDPcmpsender(IPh,UDPport, received)!=0)
 		return -2; /*I have to think about this*/
 
-	/*No matter what we insert them in the db*/
-
-	if(dbinsertperson(mydb,new)!=0)
-		return -1;
-
-	if(AmItheauth(mydb)==1)
-	{
-
-	}
-	else
-	{
-		if( UDPsend(IPh, UDPport,"OK")==-1)
+	/*Verificar se o utilizador Já está registado.*/
+	if(dbpersonfind(mydb,new)==NULL)	
+	{	
+		if(dbinsertperson(mydb,new)!=0)
 			return -1;
+		if(AmItheauth(mydb)==1)
+		{
+
+		#ifdef DEBUG
+		printf("I am the auth, preparing the LST\n");
+		#endif
+
+			int i;
+			list * aux_list;		
+			person * aux_person;
+			char LSTstr[BUF_LEN];
+			char aux_str[BUF_LEN];
+			strcpy(LSTstr, "LST\n");
+			unsigned long myIPn; /*my IP in network byte order*/
+			struct in_addr * ip_aux;
+			ip_aux = (struct in_addr *) &myIPn;	
+		
+
+
+			for(i=0;i<255;i++)
+			{
+				if(mydb->db_table[i]!=NULL)
+				{
+					for(aux_list = mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+					{				
+						aux_person = LSTgetitem(aux_list); /*Changed from mydb->db_table[i] to aux_list -> test whenever possible*/
+						myIPn = htonl(getpersonIP(aux_person));
+						sprintf(aux_str,"%s.%s;%s;%hu;%hu\n",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux), getpersonTCPport(aux_person), getpersonUDPport(aux_person));
+						strcat(LSTstr, aux_str);
+					}
+				}
+			}
+			strcat(LSTstr, "\n");
+
+			#ifdef DEBUG
+			printf("Going to send:%s\n",LSTstr);
+			#endif
+
+			if( UDPsend(IPh, UDPport,LSTstr)==-1)
+				return -1;
+
+			return 0;
+		}
 	}
+	if( UDPsend(IPh, UDPport,"OK")==-1)
+			return -1;
+	
+
 	return 0;
 }
 
-/*
-QRY()
+int DNS(db * mydb, UDPmssinfo * received, person * me)
 {
-
+	char name[NAME_LEN];
+	char surname[NAME_LEN];
+	char IP[IP_LEN];
+	person * new;
+	unsigned short UDPport;
+	unsigned long IPh;
+	if(sscanf(UDPgetmss(received),"DNS %[^.].%[^;];%[^;];%hu",name, surname,IP,&UDPport)!=4)
+		return -1;
+	IPh=atoh(IP);
+	new =personcreate(IPh,UDPport,0,name,surname);
+	if(personcmp(new, me)==0)
+		Iamtheauth(mydb);
+	if(UDPsend(IPh, UDPport,"OK")==-1)
+			return -1;
+	personfree(new);
+	return 0;
 }
-*/
+
+
+int QRY(db * mydb, UDPmssinfo * received)
+{
+	char name[NAME_LEN];
+	char surname[NAME_LEN];
+	char RPL_str[BUF_LEN];
+	person * new, * person_aux;
+	unsigned long IPn;
+	struct in_addr * ip_aux;
+	ip_aux = (struct in_addr *) &IPn;	
+
+	if(sscanf(UDPgetmss(received),"QRY %[^.].%s",name, surname)!=2)
+		return -1;
+	new=personcreate(0,0,0,name,surname);
+	person_aux=dbpersonfindbyname(mydb,new);
+	if(person_aux==NULL)
+		if(UDPsendtosender(received,"RPL\n")==-1)
+			return -1;
+	IPn=htonl(getpersonIP(person_aux));
+	sprintf(RPL_str,"RPL %s.%s;%s;%hu\n",getpersonname(person_aux),getpersonsurname(person_aux), inet_ntoa(*ip_aux),getpersonTCPport(person_aux));
+	if(UDPsendtosender(received,RPL_str)==-1)
+			return -1;
+	personfree(new);
+	return 0;
+}
+
+int UNR(db * mydb, UDPmssinfo * received)
+{
+	char name[NAME_LEN];
+	char surname[NAME_LEN];
+	person * new;
+
+	if(sscanf(UDPgetmss(received),"UNR %[^.].%s",name, surname)!=2)
+		return -1;
+	new=personcreate(0,0,0,name,surname);
+	if(dbrmpersonbyname(mydb, new)!=0)
+		return -2; /*person not found*/
+
+	if(UDPsendtosender(received,"OK")==-1)
+			return -1;
+	personfree(new);
+	return 0;
+}
+
+
+

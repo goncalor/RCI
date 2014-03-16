@@ -51,6 +51,22 @@ int UDPsend(unsigned long IP,unsigned short port,char * str)
 	dest_addr.sin_addr.s_addr=htonl(IP);
 	dest_addr.sin_port=htons(port);
 
+	#ifdef DEBUG
+	printf("Sending through UDP=%s\n",str);
+	#endif
+
+	if(sendto(UDPfd,str,strlen(str)+1,0,(struct sockaddr*)&dest_addr,sizeof(dest_addr))==-1)
+		return -1;
+
+	return 0;
+}
+
+int UDPsendtosender(UDPmssinfo * info,char * str)
+{
+	struct sockaddr_in dest_addr = info->sender;
+	#ifdef DEBUG
+	printf("Sending through UDP=%s\n",str);
+	#endif
 	if(sendto(UDPfd,str,strlen(str)+1,0,(struct sockaddr*)&dest_addr,sizeof(dest_addr))==-1)
 		return -1;
 
@@ -92,6 +108,10 @@ UDPmssinfo * UDPrecv()
 		return NULL;
 
 	buffer[mess_len]='\0';
+
+	#ifdef DEBUG
+	printf("Received through UDP=%s\n",buffer);
+	#endif
 
 	return UDPmssinfocreate(buffer, src_addr.sin_port, src_addr.sin_addr.s_addr);
 

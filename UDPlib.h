@@ -28,6 +28,9 @@ Returns 0 on sucess, -1 otherwise and errno is set.
 *******************************************************************/
 int UDPsend(unsigned long IP,unsigned short port,char * str);
 
+
+int UDPsendtosender(UDPmssinfo * info,char * str);
+
 /*******************************************************************
 Creates UDPmssinfo struct and allocs memory
 *******************************************************************/

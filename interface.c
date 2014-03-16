@@ -115,7 +115,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		if(strcmp(buffer,"LST")!=0)
 			return -8; /* WTF just happened? 2 */			
 		aux=message+strlen(buffer)+1;
-		if(aux[1]=='\n')
+		if(aux[0]=='\n')
 		{		/*That name is already in use*/
 			UDPclose();
 			UDPfreemssinfo(LST);
@@ -124,12 +124,19 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		Iamnottheauth(mydb);		
 		do 
 		{
-			sscanf(aux,"%[^.].%[^;];%[^;];%hu;%hu", name, surname, IP, &TCPport, &UDPport);
+			if(sscanf(aux,"%[^.].%[^;];%[^;];%hu;%hu", name, surname, IP, &TCPport, &UDPport)!=5)
+			{
+				#ifdef DEBUG
+					puts("LST processing error");
+				#endif
+				break;
+			}
 			aux_person = personcreate(atoh(IP),UDPport,TCPport,name,surname);
 			if(dbinsertperson(mydb,aux_person)==-1)
 				return -10;
 			aux=strchr(aux,'\n');
-		}while(aux[1]!='\n');
+			aux++;
+		}while((*aux)!='\n');
 		UDPfreemssinfo(LST);
 
 		/*Register myself on everyone's list*/
@@ -148,6 +155,8 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 					{
 						if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),info)==-1)
 							return -11;
+						if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
+							return -12;
 					}		
 				}
 			}
@@ -262,19 +271,35 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 {
 	char buffer[BUF_LEN];
-	char * surname = getpersonsurname(me);
-	int db_index = (int)surname[0];
+	/*char * name = getpersonname(me);*/
+	/*int db_index = (int)name[0];*/
+	int alone;
+	int i;
 	if(AmItheauth(mydb)==1)
 	{
 		#ifdef DEBUG
 			puts("I am leaving and I am the auth");
 		#endif
-		if(LSTfollowing(mydb->db_table[db_index ])==NULL)
+		alone=1; /*first we supose we are alone*/
+		for(i=0;i<255;i++)
+		{
+			if(mydb->db_table[i]!=NULL)
+			{
+				if(personcmp(me,LSTgetitem(mydb->db_table[i]))!=0 || LSTfollowing(mydb->db_table[i])!=NULL)
+				{
+					alone=0;	/*We are not alone*/
+					break;
+				}
+			}
+		}
+
+
+		if(alone==0)
 		{
 			#ifdef DEBUG
 				puts("I am the only person with this surname");
 			#endif
-			sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+			sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
 			if(UDPsend(saIP, saport,buffer)==-1)
 			{
 				return -1;
@@ -294,60 +319,70 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 
 		list * aux_list;
 		person * aux_person;
-		for(aux_list = mydb->db_table[db_index]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
-		{				
-			aux_person = LSTgetitem(aux_list);
-			if(personcmp(aux_person,me)!=1)
+		for(i=0;i<255;i++)
+		{
+			if(mydb->db_table[i]!=NULL)
 			{
-				unsigned long newauthIP = htonl(getpersonIP(aux_person)); /*my IP in network byte order*/
-				struct in_addr * ip_aux;
-				ip_aux = (struct in_addr *) &newauthIP;	
-				
-				sprintf(buffer,"DNS %s.%s;%s;%hu",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux),getpersonUDPport(aux_person));
+				if(personcmp(me,LSTgetitem(mydb->db_table[i]))!=0)
+				{
+					aux_list = mydb->db_table[i]; 		
+					break;
+				}
+				if(LSTfollowing(mydb->db_table[i])!=NULL)
+				{				
+					aux_list = LSTfollowing(mydb->db_table[i]);
+					break;
+				}
+			} 
+		}
+
+		aux_person = LSTgetitem(aux_list);
+
+		unsigned long newauthIP = htonl(getpersonIP(aux_person)); /*my IP in network byte order*/
+		struct in_addr * ip_aux;
+		ip_aux = (struct in_addr *) &newauthIP;	
+	
+		sprintf(buffer,"DNS %s.%s;%s;%hu",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux),getpersonUDPport(aux_person));
 
 		#ifdef DEBUG
 			printf("Sending %s to SA \n",buffer);
 		#endif				
 
-				if(UDPsend(saIP,saport,buffer)==-1)
-					return -1;
-				if(OK(saIP,saport)!=0)
-					return -1;
+		if(UDPsend(saIP,saport,buffer)==-1)
+			return -1;
+		if(OK(saIP,saport)!=0)
+			return -1;
 
 		#ifdef DEBUG
 			printf("Sending %s to new auth \n",buffer);
 		#endif		
 
-				if(UDPsend(saIP,saport,buffer)==-1)
-					return -1;
-				if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
-					return -1;
-				
-				break;
-			}
-		}
-		if(aux_list==NULL)
+		if(UDPsend(saIP,saport,buffer)==-1)
 			return -1;
-
-		sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+		if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
+			return -1;
+		
+		sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
 
 		#ifdef DEBUG
-			printf("Sending %s to everyone on the DB with my surname \n",buffer);
+			printf("Sending %s to everyone on the DB \n",buffer);
 		#endif		
 
-		for(; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
-		{				
-			aux_person = LSTgetitem(aux_list);
-			if(personcmp(aux_person,me)!=1)
-			{
-				if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
-					return -1;
-				if(OK(getpersonIP(aux_person),getpersonIP(aux_person))!=0)
-					return -1;
+		for(i=0;i<255;i++)
+		{
+			for(aux_list=mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+			{				
+				aux_person = LSTgetitem(aux_list);
+				if(personcmp(aux_person,me)!=1)
+				{
+					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
+						return -1;
+					if(OK(getpersonIP(aux_person),getpersonIP(aux_person))!=0)
+						return -1;
+				}
 			}
 		}
-			
-			
+
 			/*Free the db*/
 		dbclean(mydb);
 		UDPclose();
@@ -360,26 +395,27 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 		#ifdef DEBUG
 			puts("I am leaving and I am not the auth");
 		#endif
-		sprintf(buffer,"UNR %s.%s",getpersonname(me),surname);
+		sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
 		list * aux_list;
 		person * aux_person;
 
 		#ifdef DEBUG
 			printf("Sending %s to everyone on the DB with my surname \n",buffer);
 		#endif		
-
-		for(aux_list = mydb->db_table[db_index]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
-		{				
-			aux_person = LSTgetitem(aux_list);
-			if(personcmp(aux_person,me)!=1)
-			{
-				if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
-					return -1;
-				if(OK(getpersonIP(aux_person),getpersonIP(aux_person))!=0)
-					return -1;
+		for(i=0;i<255;i++)
+		{
+			for(aux_list = mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
+			{				
+				aux_person = LSTgetitem(aux_list);
+				if(personcmp(aux_person,me)!=1)
+				{
+					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
+						return -1;
+					if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
+						return -1;
+				}
 			}
 		}
-
 
 		/*Free the db*/
 		dbclean(mydb);

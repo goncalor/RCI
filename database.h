@@ -50,6 +50,8 @@ Returns -1 on error, 0 on sucess
 *******************************************************************/
 int dbrmperson(db*,person*);
 
+int dbrmpersonbyname(db * mydb, person * toremov);
+
 /*******************************************************************
 Creates a person, allocs memory and inicializes it
 Returns the pointer to the person
@@ -63,6 +65,11 @@ Returns the pointer to the updated person
 person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname);
 
 
+/*******************************************************************
+Returns the pointer to the person tofind in the database, returns NULL if non existing;
+compares only the IP and UDP port
+*******************************************************************/
+person * dbpersonfind(db * mydb, person * tofind);
 
 
 /*******************************************************************
@@ -85,6 +92,19 @@ Returns true if the person has the same IP and same DNSport
 Returns false otherwise
 *******************************************************************/
 int personcmp(person * one, person * two);
+
+/*******************************************************************
+Returns true if the person has the same name and same surname
+Returns false otherwise
+*******************************************************************/
+int personcmpbyname(person * one, person * two);
+
+
+/*******************************************************************
+Returns the pointer to the person tofind in the database, returns NULL if non existing;
+compares only names.
+*******************************************************************/
+person * dbpersonfindbyname(db * mydb, person * tofind);
 
 
 /*These are self explanatory*/

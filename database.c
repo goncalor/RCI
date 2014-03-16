@@ -65,6 +65,32 @@ int dbrmperson(db * mydb, person * toremov)
 		mydb->db_table[(int)toremov->name[0]]=NULL;		
 	return 0;
 }
+
+int dbrmpersonbyname(db * mydb, person * toremov)
+{
+	list * aux, *  aux2=NULL;
+	for(aux=mydb->db_table[(int)toremov->name[0]]; !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, toremov) && aux!=NULL; aux=LSTfollowing(aux))
+	{
+		aux2=aux;
+	}
+	if(aux==NULL)
+		return -1; /*person not found*/
+	aux=LSTremove(aux2,aux, (void (*)(Item))personfree);
+	if(aux2==NULL)
+		mydb->db_table[(int)toremov->name[0]]=NULL;		
+	return 0;
+}
+
+
+person * dbpersonfind(db * mydb, person * tofind)
+{
+	list * aux;
+	for(aux=mydb->db_table[(int)tofind->name[0]]; aux!=NULL && !LSTapply(aux,(Item(*)(Item, Item)) personcmp, tofind); aux=LSTfollowing(aux));
+	if(aux==NULL)
+		return NULL;
+	return LSTgetitem(aux);
+}
+
 person * personcreate(unsigned long IP, unsigned short UDPport, unsigned short TCPport, char * name, char * surname)
 {
 	person * new = (person *)  malloc(sizeof(person));
@@ -120,6 +146,23 @@ int personcmp(person * one, person * two)
 {
 	return one->IP==two->IP && one->UDPport==two->UDPport;
 
+}
+
+int personcmpbyname(person * one, person * two)
+{
+	if(strcmp(one->name,two->name)==0 && strcmp(one->surname,two->surname)==0 )
+		return 1;
+	else
+		return 0;
+}
+
+person * dbpersonfindbyname(db * mydb, person * tofind)
+{
+	list * aux;
+	for(aux=mydb->db_table[(int)tofind->name[0]]; !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, tofind) && aux!=NULL; aux=LSTfollowing(aux));
+	if(aux==NULL)
+		return NULL;
+	return LSTgetitem(aux);
 }
 
 unsigned long getpersonIP(person*p)
