@@ -323,10 +323,10 @@ int main(int argc, char **argv)
 
 				if(sscanf(buf, " %*s %[^.].%s", name, surname)!=2)
 					puts("> find name.surname");
-				else 
+				else
 				{
-					v=find(saIP, saport, name, surname, interloc);
-					if(v!=0)
+					err=find(saIP, saport, name, surname, interloc, me, mydb);
+					if(err!=0)
 					{
 						#ifdef DEBUG
 						puts("find ended abruptly");

@@ -167,13 +167,45 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 
 
 /* found is created by find. returns 0 on success*/
-int find(unsigned long saIP, unsigned short saport, char *name, char *surname, person *found)
+int find(unsigned long saIP, unsigned short saport, char *name, char *surname, person *found, person *me, db *mydb)
 {
 	char str[BUF_LEN];
 	UDPmssinfo *received;
 	char authname[NAME_LEN], authsurname[NAME_LEN], authIPascii[16], SC_IPascii[16];
 	unsigned short authDNSport, talkport;
 	unsigned long authIP, SC_IP;
+	person *to_find = personcreate(0, 0/*DNSport*/, 0, name, surname);
+
+	if(to_find==NULL)
+		return -11;
+
+	if(strcmp(getpersonsurname(me), surname)==0)
+	{
+		#ifdef DEBUG
+		puts("person has same surname as me");
+		#endif
+
+		/*find person name.surname in database*/
+
+		found = dbpersonfindbyname(mydb, to_find);
+		if(found==NULL)
+		{
+			#ifdef DEBUG
+			puts("person not found in my database");
+			#endif
+
+			return -12;
+		}
+
+
+//		SC_IP = ;
+//		talkport = ;
+
+		found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
+		return 0;
+	}
+
+
 
 	/* query SA */
 
