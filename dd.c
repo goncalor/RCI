@@ -325,15 +325,19 @@ int main(int argc, char **argv)
 					puts("> find name.surname");
 				else
 				{
-					err=find(saIP, saport, name, surname, interloc, me, mydb);
+					err = find(saIP, saport, name, surname, interloc, me, mydb);
 					if(err!=0)
 					{
 						#ifdef DEBUG
 						puts("find ended abruptly");
-						printf("find returned: %d\n",v	);
+						printf("find returned: %d\n", err);
 						#endif
-	
+
 						/*do something about it*/
+						if(err==-9||err==-4)
+						{
+							printf("> %s.%s was not found\n", name, surname);
+						}	
 					}
 					else
 					{

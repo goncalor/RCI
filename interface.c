@@ -174,9 +174,9 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	char authname[NAME_LEN], authsurname[NAME_LEN], authIPascii[16], SC_IPascii[16];
 	unsigned short authDNSport, talkport;
 	unsigned long authIP, SC_IP;
-	person *to_find = personcreate(0, 0/*DNSport*/, 0, name, surname);
+	person *aux = personcreate(0, 0/*DNSport*/, 0, name, surname);
 
-	if(to_find==NULL)
+	if(aux==NULL)
 		return -11;
 
 	if(strcmp(getpersonsurname(me), surname)==0)
@@ -187,19 +187,19 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 
 		/*find person name.surname in database*/
 
-		found = dbpersonfindbyname(mydb, to_find);
+		found = dbpersonfindbyname(mydb, aux);
 		if(found==NULL)
 		{
 			#ifdef DEBUG
 			puts("person not found in my database");
 			#endif
 
+			personfree(aux);
 			return -12;
 		}
 
-
-//		SC_IP = ;
-//		talkport = ;
+		SC_IP = getpersonIP(found);
+		talkport = getpersonTCPport(found);
 
 		found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
 		return 0;
@@ -246,10 +246,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	#ifdef DEBUG
 	printf("auth name: %s.%s\n", authname, authsurname);
 	printf("authIP: %08lX  (hex)\n", authIP);
-//	printf("talkport: %hu\n", talkport);
 	printf("auth DNS port: %hu\n", authDNSport);
-//	printf("saIP: %08lX  (hex)\n", saIP);
-//	printf("saport: %hu\n", saport);
 	#endif
 
 	/* query SNP */
