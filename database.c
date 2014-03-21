@@ -157,9 +157,10 @@ int personcmpbyname(person * one, person * two)
 person * dbpersonfindbyname(db * mydb, person * tofind)
 {
 	list * aux;
-	for(aux=mydb->db_table[(int)tofind->name[0]]; !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, tofind) && aux!=NULL; aux=LSTfollowing(aux));
-	if(aux==NULL)
-		return NULL;
+	for(aux=mydb->db_table[(int)tofind->name[0]]; aux!=NULL && !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, tofind); aux=LSTfollowing(aux))
+	;
+		if(aux==NULL)
+			return NULL;
 	return LSTgetitem(aux);
 }
 

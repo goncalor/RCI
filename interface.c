@@ -175,7 +175,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 
 
 /* found is created by find. returns 0 on success*/
-int find(unsigned long saIP, unsigned short saport, char *name, char *surname, person *found, person *me, db *mydb)
+int find(unsigned long saIP, unsigned short saport, char *name, char *surname, person **found, person *me, db *mydb)
 {
 	char str[BUF_LEN];
 	UDPmssinfo *received;
@@ -195,8 +195,8 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 
 		/*find person name.surname in database*/
 
-		found = dbpersonfindbyname(mydb, aux);
-		if(found==NULL)
+		*found = dbpersonfindbyname(mydb, aux);
+		if(*found==NULL)
 		{
 			#ifdef DEBUG
 			puts("person not found in my database");
@@ -206,10 +206,10 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 			return -12;
 		}
 
-		SC_IP = getpersonIP(found);
-		talkport = getpersonTCPport(found);
+		SC_IP = getpersonIP(*found);
+		talkport = getpersonTCPport(*found);
 
-		found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
+		*found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
 		return 0;
 	}
 
@@ -301,7 +301,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	printf("talkport: %hu\n", talkport);
 	#endif
 
-	found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
+	*found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
 
 	return 0;
 }

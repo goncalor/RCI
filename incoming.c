@@ -214,13 +214,16 @@ int QRY(db * mydb, UDPmssinfo * received)
 
 	if(sscanf(UDPgetmss(received),"QRY %[^.].%s",name, surname)!=2)
 		return -1;
+
 	new=personcreate(0,0,0,name,surname);
-	person_aux=dbpersonfindbyname(mydb,new);
+	person_aux = dbpersonfindbyname(mydb,new);
 	if(person_aux==NULL)
 		if(UDPsendtosender(received,"RPL\n")==-1)
 			return -1;
-	IPn=htonl(getpersonIP(person_aux));
-	sprintf(RPL_str,"RPL %s.%s;%s;%hu\n",getpersonname(person_aux),getpersonsurname(person_aux), inet_ntoa(*ip_aux),getpersonTCPport(person_aux));
+
+	IPn = htonl(getpersonIP(person_aux));
+	sprintf(RPL_str,"RPL %s.%s;%s;%hu\n", getpersonname(person_aux), getpersonsurname(person_aux), inet_ntoa(*ip_aux), getpersonTCPport(person_aux));
+
 	if(UDPsendtosender(received,RPL_str)==-1)
 			return -1;
 	personfree(new);

@@ -149,10 +149,10 @@ int main(int argc, char **argv)
 			#ifdef DEBUG
 			puts("UDP connection came in for UDP_fd");
 			#endif
-			v=UDPprocess(mydb,me);
-			if(v!=0)
+			err=UDPprocess(mydb, me);
+			if(err!=0)
 				printf("UDPconnection Error: %d\n",v);
-			
+
 		}
 
 		if(FD_ISSET(fds[TCP_fd], &rfds))	/* new chat request */
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 					puts("> find name.surname");
 				else
 				{
-					err = find(saIP, saport, name, surname, interloc, me, mydb);
+					err = find(saIP, saport, name, surname, &interloc, me, mydb);
 					if(err!=0)
 					{
 						#ifdef DEBUG
@@ -336,7 +336,7 @@ int main(int argc, char **argv)
 						#endif
 
 						/*do something about it*/
-						if(err==-9||err==-4)
+						if(err==-9||err==-4||err==-12)
 						{
 							printf("> %s.%s was not found\n", name, surname);
 						}	
@@ -346,7 +346,7 @@ int main(int argc, char **argv)
 						printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
 
 						#ifdef DEBUG
-						printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonUDPport(interloc));
+						printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonTCPport(interloc));
 						#endif
 
 						personfree(interloc);
