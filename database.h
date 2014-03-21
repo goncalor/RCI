@@ -62,7 +62,7 @@ person * personcreate(unsigned long IP, unsigned short UDPport, unsigned short T
 Updates an existing person p
 Returns the pointer to the updated person
 *******************************************************************/
-person *personupdate(person *p, unsigned long IP, unsigned short DNSport, unsigned short TCPport, char *name, char *surname);
+person *personupdate(person *p, unsigned long IP, unsigned short UDPport, unsigned short TCPport, char *name, char *surname);
 
 
 /*******************************************************************

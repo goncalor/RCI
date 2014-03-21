@@ -300,11 +300,13 @@ int main(int argc, char **argv)
 						chatting=false;
 					}
 
-					if(leave(me, saIP, saport, mydb)!=0)
+					v=leave(me, saIP, saport, mydb);
+
+					if(v!=0)
 					{
 						/*do something about it*/		
 						#ifdef DEBUG
-						puts("leave ERROR");
+						printf("leave ERROR:%d\n",v);
 						#endif
 					}
 					connected=false;
@@ -434,11 +436,13 @@ int main(int argc, char **argv)
 						chatting=false;
 					}
 
-					if(leave(me, saIP, saport, mydb)!=0)
+					v=leave(me, saIP, saport, mydb);
+
+					if(v!=0)
 					{
 						/*do something about it*/		
 						#ifdef DEBUG
-						puts("leave ERROR");
+						printf("leave ERROR:%d\n",v);
 						#endif
 					}
 					connected=false;

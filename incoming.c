@@ -46,6 +46,7 @@ int UDPprocess(db * mydb, person * me)
 {
 	UDPmssinfo * received = UDPrecv();
 	char * mssaux = UDPgetmss(received);
+	int i;
 
 	#ifdef DEBUG
 	printf("received %s through UDP\n",mssaux);
@@ -61,8 +62,11 @@ int UDPprocess(db * mydb, person * me)
 */
 	if (strncmp("REG",mssaux,3)==0)
 	{
-		if(REG(mydb, received)!=0)
-			return -1;
+
+			i=REG(mydb, received);
+			if(i!=0)
+				printf("REG Error: %d\n",i);
+			
 	}
 	else if(strncmp("DNS",mssaux,3)==0)
 	{
@@ -121,9 +125,9 @@ int REG(db * mydb, UDPmssinfo * received)
 		if(AmItheauth(mydb)==1)
 		{
 
-		#ifdef DEBUG
-		printf("I am the auth, preparing the LST\n");
-		#endif
+			#ifdef DEBUG
+			printf("I am the auth, preparing the LST\n");
+			#endif
 
 			int i;
 			list * aux_list;		
@@ -147,6 +151,9 @@ int REG(db * mydb, UDPmssinfo * received)
 						myIPn = htonl(getpersonIP(aux_person));
 						sprintf(aux_str,"%s.%s;%s;%hu;%hu\n",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux), getpersonTCPport(aux_person), getpersonUDPport(aux_person));
 						strcat(LSTstr, aux_str);
+							#ifdef DEBUG
+							printf("LST building:%s\n",LSTstr);
+							#endif
 					}
 				}
 			}
@@ -181,9 +188,14 @@ int DNS(db * mydb, UDPmssinfo * received, person * me)
 		return -1;
 	IPh=atoh(IP);
 	new =personcreate(IPh,UDPport,0,name,surname);
-	if(personcmp(new, me)==0)
+	if(personcmpbyname(new, me)==1)
+	{
 		Iamtheauth(mydb);
-	if(UDPsend(IPh, UDPport,"OK")==-1)
+			#ifdef DEBUG
+			puts("I am the auth");
+			#endif
+	}
+	if(UDPsendtosender(received,"OK")==-1)
 			return -1;
 	personfree(new);
 	return 0;

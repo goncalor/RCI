@@ -63,7 +63,11 @@ int UDPsend(unsigned long IP,unsigned short port,char * str)
 
 int UDPsendtosender(UDPmssinfo * info,char * str)
 {
-	struct sockaddr_in dest_addr = info->sender;
+	struct sockaddr_in dest_addr;
+	memset((void*)&dest_addr,(int)'\0',sizeof(dest_addr));
+	dest_addr.sin_family=AF_INET;
+	dest_addr.sin_addr.s_addr=htonl(info->sender.sin_addr.s_addr);
+	dest_addr.sin_port=htons(info->sender.sin_port);
 	#ifdef DEBUG
 	printf("Sending through UDP=%s\n",str);
 	#endif
@@ -81,8 +85,8 @@ UDPmssinfo * UDPmssinfocreate(char * message, unsigned short port, unsigned long
 	strcpy(new->message, message);
 	new->message[strlen(message)]='\0';
 	new->sender.sin_family=AF_INET;
-	new->sender.sin_addr.s_addr=htonl(IP);
-	new->sender.sin_port=htons(port);
+	new->sender.sin_addr.s_addr=ntohl(IP);
+	new->sender.sin_port=ntohs(port);
 	return new;
 }
 

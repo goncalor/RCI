@@ -61,23 +61,21 @@ int dbrmperson(db * mydb, person * toremov)
 	if(aux==NULL)
 		return -1; /*person not found*/
 	aux=LSTremove(aux2,aux, (void (*)(Item))personfree);
-	if(aux2==NULL)
-		mydb->db_table[(int)toremov->name[0]]=NULL;		
+	mydb->db_table[(int)toremov->name[0]]=aux;		
 	return 0;
 }
 
 int dbrmpersonbyname(db * mydb, person * toremov)
 {
 	list * aux, *  aux2=NULL;
-	for(aux=mydb->db_table[(int)toremov->name[0]]; !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, toremov) && aux!=NULL; aux=LSTfollowing(aux))
+	for(aux=mydb->db_table[(int)toremov->name[0]]; aux!=NULL && !LSTapply(aux,(Item(*)(Item, Item)) personcmpbyname, toremov); aux=LSTfollowing(aux))
 	{
 		aux2=aux;
 	}
 	if(aux==NULL)
 		return -1; /*person not found*/
 	aux=LSTremove(aux2,aux, (void (*)(Item))personfree);
-	if(aux2==NULL)
-		mydb->db_table[(int)toremov->name[0]]=NULL;		
+	mydb->db_table[(int)toremov->name[0]]=aux;		
 	return 0;
 }
 
