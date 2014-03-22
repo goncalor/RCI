@@ -171,6 +171,8 @@ int main(int argc, char **argv)
 				caller_addr_size = sizeof(caller_addr);
 				fds[TCP_fd_chat] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
 				chatting = true;
+
+				printf("> now chatting with ...\n");
 			}
 			else
 			{
@@ -202,6 +204,8 @@ int main(int argc, char **argv)
 					#ifdef DEBUG
 					puts("chat terminated by peer");
 					#endif
+
+					puts("> Chat closed by peer.");
 
 					close(fds[TCP_fd_chat]);
 					fds[TCP_fd_chat] = -1;
@@ -279,6 +283,7 @@ int main(int argc, char **argv)
 							printf("listen()ing to port %d failed\n", talkport);
 							#endif
 
+							printf("> Port %d already in use. Use -t option and try a different port.\n", talkport);
 						}
 					}
 				}
@@ -297,7 +302,7 @@ int main(int argc, char **argv)
 					fds[TCP_fd] = -1;
 					fds[UDP_fd] = -1;
 
-					if(chatting==true)
+					if(chatting==true)	/* leave from current chat */
 					{
 						close(fds[TCP_fd_chat]);
 						fds[TCP_fd_chat] = -1;
@@ -305,13 +310,13 @@ int main(int argc, char **argv)
 						chatting=false;
 					}
 
-					v=leave(me, saIP, saport, mydb);
+					err=leave(me, saIP, saport, mydb);
 
-					if(v!=0)
+					if(err!=0)
 					{
 						/*do something about it*/		
 						#ifdef DEBUG
-						printf("leave ERROR:%d\n",v);
+						printf("leave ERROR:%d\n",err);
 						#endif
 					}
 					connected=false;
@@ -370,8 +375,18 @@ int main(int argc, char **argv)
 				{
 					if(chatting==false)
 					{
-						/*do things*/
-						/*fds[TCP_fd_chat] = ;*/
+						err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, me, mydb);
+						switch(err)
+						{
+							case -1:
+								printf("> Could not find %s.%s.\n", name, surname);
+								break;
+							case -2:
+								printf("> Found %s.%s. Could not connect.\n", name, surname);
+								break;
+							default:
+								printf("> Now connected to %s.%s.\n", name, surname);
+						}
 						chatting=true;
 					}
 					else
@@ -385,6 +400,17 @@ int main(int argc, char **argv)
 				#ifdef DEBUG
 				puts("disconnect");
 				#endif
+
+				if(chatting==true)	/* leave from current chat */
+				{
+					close(fds[TCP_fd_chat]);
+					fds[TCP_fd_chat] = -1;
+
+					chatting=false;
+				}
+				else
+					puts("> You were disconnected already");
+
 			}
 			else if(strcmp(comm, "message")==0)
 			{

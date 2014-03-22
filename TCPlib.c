@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
-/* connects IP and port to the socket referred to by the return value. when failing to create a socket returns -1; when failing to connect returns -2. sets errno in both cases. */
+/* connects IP and port to the socket referred to by the return value. IP is in host byte order. when failing to create a socket returns -1; when failing to connect returns -2. sets errno in both cases. */
 int TCPconnect(unsigned long IP, unsigned short port)
 {
 	int fd;

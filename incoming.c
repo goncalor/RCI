@@ -25,7 +25,7 @@ int MSS(char *str)
 		return -1;
 	}
 
-	printf("%s %s: %s\n", name, surname, buf);	
+	printf("%s.%s: %s\n", name, surname, buf);	
 
 	return 0;
 }
