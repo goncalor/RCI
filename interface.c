@@ -280,14 +280,13 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 		return -8;
 
 
-
 	strcpy(str, UDPgetmss(received));
 
 	UDPfreemssinfo(received);
 
 	if(sscanf(str, "RPL %[^.].%[^;];%[^;];%hu", name, surname, SC_IPascii, &talkport)!=4)
 	{
-		if(strcmp(str, "RPL")==0)	/* name.surname is not registered in SNP */
+		if(strncmp(str, "RPL", 3)==0)	/* name.surname is not registered in SNP */
 			return -9;
 		else
 			return -10;

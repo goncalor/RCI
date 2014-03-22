@@ -222,20 +222,29 @@ int QRY(db * mydb, UDPmssinfo * received)
 	struct in_addr * ip_aux;
 	ip_aux = (struct in_addr *) &IPn;	
 
-	if(sscanf(UDPgetmss(received),"QRY %[^.].%s",name, surname)!=2)
+	if(sscanf(UDPgetmss(received), "QRY %[^.].%s", name, surname)!=2)
 		return -1;
 
-	new=personcreate(0,0,0,name,surname);
+	new = personcreate(0,0,0,name,surname);
 	person_aux = dbpersonfindbyname(mydb,new);
-	if(person_aux==NULL)
-		if(UDPsendtosender(received,"RPL\n")==-1)
-			return -1;
+	if(person_aux==NULL)	/* person does not exist in database */
+	{
+		#ifdef DEBUG
+		printf("%s.%s not found in my database\n", name, surname);
+		#endif
+
+		personfree(new);
+		if(UDPsendtosender(received,"RPL")==-1)
+			return -2;
+		else
+			return -3;
+	}
 
 	IPn = htonl(getpersonIP(person_aux));
 	sprintf(RPL_str,"RPL %s.%s;%s;%hu\n", getpersonname(person_aux), getpersonsurname(person_aux), inet_ntoa(*ip_aux), getpersonTCPport(person_aux));
 
-	if(UDPsendtosender(received,RPL_str)==-1)
-			return -1;
+	if(UDPsendtosender(received, RPL_str)==-1)
+		return -4;
 	personfree(new);
 	return 0;
 }

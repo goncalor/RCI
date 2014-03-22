@@ -149,10 +149,15 @@ int main(int argc, char **argv)
 			#ifdef DEBUG
 			puts("UDP connection came in for UDP_fd");
 			#endif
-			err=UDPprocess(mydb, me);
+			err = UDPprocess(mydb, me);
 			if(err!=0)
-				printf("UDPconnection Error: %d\n",err);
+			{
+				#ifdef DEBUG
+				printf("UDPprocess Error: %d\n", err);
+				#endif
 
+				/*do something about it*/
+			}
 		}
 
 		if(FD_ISSET(fds[TCP_fd], &rfds))	/* new chat request */
@@ -339,7 +344,7 @@ int main(int argc, char **argv)
 						if(err==-9||err==-4||err==-12)
 						{
 							printf("> %s.%s was not found\n", name, surname);
-						}	
+						}
 					}
 					else
 					{
