@@ -31,6 +31,8 @@ int main(int argc, char **argv)
 	person *me;
 	db * mydb =  dbcreate();
 
+//	memset(buf, 0, BUF_LEN);
+
 	if(saIPs==NULL)
 	{
 		exit(1);
@@ -172,7 +174,7 @@ int main(int argc, char **argv)
 				fds[TCP_fd_chat] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
 				chatting = true;
 
-				printf("> now chatting with ...\n");
+				printf("> Now chatting with ...\n");
 			}
 			else
 			{
@@ -197,6 +199,16 @@ int main(int argc, char **argv)
 			/*preprocess received string (read till \n)*/
 
 			err = TCPrecv(fds[TCP_fd_chat], buf, BUF_LEN);
+
+			#ifdef DEBUG
+			for(v=0; v<BUF_LEN; v++)
+				if(buf[v]=='\n')
+				{
+					printf("\\n at position %d\n", v);
+					break;
+				}
+			#endif
+
 			if(err<0)
 			{
 				if(err==-2)
@@ -296,8 +308,6 @@ int main(int argc, char **argv)
 				#endif
 				if(connected==true)
 				{
-					/*Disconnect;*/
-
 					close(fds[TCP_fd]);	/* accept no more connections */
 					fds[TCP_fd] = -1;
 					fds[UDP_fd] = -1;
@@ -386,8 +396,8 @@ int main(int argc, char **argv)
 								break;
 							default:
 								printf("> Now connected to %s.%s.\n", name, surname);
+								chatting=true;
 						}
-						chatting=true;
 					}
 					else
 					{

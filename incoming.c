@@ -15,7 +15,7 @@ int MSS(char *str)
 {
 	char name[NAME_LEN], surname[NAME_LEN], buf[BUF_LEN];
 
-	if(sscanf(str, "MSS %[^.].%[^;]; %[^\n]\n", name, surname, buf)!=3)
+	if(sscanf(str, "MSS %[^.].%[^;]; %[^\n]", name, surname, buf)!=3)
 	{
 		#ifdef DEBUG
 		printf("received malformated string %s", str);
