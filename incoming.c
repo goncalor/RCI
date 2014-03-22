@@ -142,7 +142,7 @@ int REG(db * mydb, UDPmssinfo * received)
 			char LSTstr[BUF_LEN];
 			char aux_str[BUF_LEN];
 			strcpy(LSTstr, "LST\n");
-			unsigned long myIPn; /*my IP in network byte order*/
+			unsigned long myIPn; /* my IP in network byte order */
 			struct in_addr * ip_aux;
 			ip_aux = (struct in_addr *) &myIPn;	
 		
@@ -154,7 +154,7 @@ int REG(db * mydb, UDPmssinfo * received)
 				{
 					for(aux_list = mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
 					{				
-						aux_person = LSTgetitem(aux_list); /*Changed from mydb->db_table[i] to aux_list -> test whenever possible*/
+						aux_person = LSTgetitem(aux_list); /* Changed from mydb->db_table[i] to aux_list -> test whenever possible */
 						myIPn = htonl(getpersonIP(aux_person));
 						sprintf(aux_str,"%s.%s;%s;%hu;%hu\n",getpersonname(aux_person),getpersonsurname(aux_person),inet_ntoa(*ip_aux), getpersonTCPport(aux_person), getpersonUDPport(aux_person));
 						strcat(LSTstr, aux_str);
@@ -167,10 +167,10 @@ int REG(db * mydb, UDPmssinfo * received)
 			strcat(LSTstr, "\n");
 
 			#ifdef DEBUG
-			printf("Going to send:%s\n",LSTstr);
+			printf("Going to send:%s",LSTstr);
 			#endif
 
-			if( UDPsend(IPh, UDPport,LSTstr)==-1)
+			if(UDPsend(IPh, UDPport, LSTstr)==-1)
 				return -1;
 
 			return 0;
@@ -241,7 +241,7 @@ int QRY(db * mydb, UDPmssinfo * received)
 	}
 
 	IPn = htonl(getpersonIP(person_aux));
-	sprintf(RPL_str,"RPL %s.%s;%s;%hu\n", getpersonname(person_aux), getpersonsurname(person_aux), inet_ntoa(*ip_aux), getpersonTCPport(person_aux));
+	sprintf(RPL_str,"RPL %s.%s;%s;%hu", getpersonname(person_aux), getpersonsurname(person_aux), inet_ntoa(*ip_aux), getpersonTCPport(person_aux));
 
 	if(UDPsendtosender(received, RPL_str)==-1)
 		return -4;

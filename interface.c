@@ -475,7 +475,7 @@ int message(int fd, char *message, person *me)
 
 	len = strlen(header) + strlen(name) + strlen(surname) + strlen(message) + 3; /* +3 for . ; \n */
 
-	str = malloc(len+1);	/* +1 for */
+	str = malloc(len+1);	/* +1 for \0 */
 	if(str==NULL)
 		return -2;
 

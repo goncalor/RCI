@@ -198,17 +198,7 @@ int main(int argc, char **argv)
 
 			/*preprocess received string (read till \n)*/
 
-			err = TCPrecv(fds[TCP_fd_chat], buf, BUF_LEN);
-
-			#ifdef DEBUG
-			for(v=0; v<BUF_LEN; v++)
-				if(buf[v]=='\n')
-				{
-					printf("\\n at position %d\n", v);
-					break;
-				}
-			#endif
-
+			err = TCPrecv(fds[TCP_fd_chat], buf, BUF_LEN-1); /* leave room for \0 added below */
 			if(err<0)
 			{
 				if(err==-2)
@@ -227,7 +217,10 @@ int main(int argc, char **argv)
 					puts("> Failed to receive some message.");
 			}
 			else
+			{
+				buf[err] = 0;	/* add \0 to the end. TCPrecv does not add \0 */
 				MSS(buf);
+			}
 		}
 
 		if(FD_ISSET(fds[stdin_fd], &rfds))	/* something was written */
