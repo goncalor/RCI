@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 			#endif
 			err=UDPprocess(mydb, me);
 			if(err!=0)
-				printf("UDPconnection Error: %d\n",v);
+				printf("UDPconnection Error: %d\n",err);
 
 		}
 

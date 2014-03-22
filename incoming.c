@@ -65,7 +65,10 @@ int UDPprocess(db * mydb, person * me)
 
 			i=REG(mydb, received);
 			if(i!=0)
+			{
 				printf("REG Error: %d\n",i);
+				return -1;
+			}
 			
 	}
 	else if(strncmp("DNS",mssaux,3)==0)
@@ -80,8 +83,12 @@ int UDPprocess(db * mydb, person * me)
 	}
 	else if(strncmp("UNR",mssaux,3)==0)
 	{
-		if(UNR(mydb,received)!=0)
+		i=UNR(mydb,received);
+		if(i!=0)
+		{
+			printf("UNR Error: %d\n",i);
 			return -4;
+		}
 	}
 	else if(strncmp("OK",mssaux,2)==0)
 	{
@@ -168,6 +175,9 @@ int REG(db * mydb, UDPmssinfo * received)
 
 			return 0;
 		}
+	}
+	else{
+		puts("Already Registered");
 	}
 	if( UDPsend(IPh, UDPport,"OK")==-1)
 			return -1;
