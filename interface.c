@@ -182,10 +182,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	char authname[NAME_LEN], authsurname[NAME_LEN], authIPascii[16], SC_IPascii[16];
 	unsigned short authDNSport, talkport;
 	unsigned long authIP, SC_IP;
-	person *aux = personcreate(0, 0/*DNSport*/, 0, name, surname);
-
-	if(aux==NULL)
-		return -11;
+	person *aux;
 
 	if(strcmp(getpersonsurname(me), surname)==0)
 	{
@@ -193,16 +190,20 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 		puts("person has same surname as me");
 		#endif
 
-		/*find person name.surname in database*/
+		aux = personcreate(0, 0/*DNSport*/, 0, name, surname);
+		if(aux==NULL)
+			return -11;
+
+		/* find person name.surname in my database */
 
 		*found = dbpersonfindbyname(mydb, aux);
+		personfree(aux);	/* not needed anymore */
 		if(*found==NULL)
 		{
 			#ifdef DEBUG
 			puts("person not found in my database");
 			#endif
 
-			personfree(aux);
 			return -12;
 		}
 
@@ -210,9 +211,8 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 		talkport = getpersonTCPport(*found);
 
 		*found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
-		return 0;
+		return 0;	/* person found in my database */
 	}
-
 
 
 	/* query SA */
@@ -302,7 +302,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 
 	*found = personcreate(SC_IP, 0/*DNSport*/, talkport, name, surname);
 
-	return 0;
+	return 0;	/* person found in another SNP database */
 }
 
 
