@@ -103,10 +103,6 @@ UDPmssinfo * UDPrecv()
 	char buffer[BUF_LEN_UDP];
 	int mess_len;
 
-	#ifdef DEBUG
-	printf("UDPfd=%d\n",UDPfd);
-	#endif
-
 	mess_len = recvfrom(UDPfd,buffer,BUF_LEN_UDP,0,(struct sockaddr*)&src_addr,&addrlen);
 	if(mess_len==-1)
 		return NULL;

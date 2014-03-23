@@ -32,7 +32,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 
 	sprintf(info,"REG %s.%s;%s;%hu;%hu", getpersonname(me),getpersonsurname(me),inet_ntoa(*ip_aux),getpersonTCPport(me), getpersonUDPport(me));
 		#ifdef DEBUG
-			printf("Sending: %s\nUDPfd=%d\n",info,fdUDP);
+			printf("Sending: %s\n",info);
 		#endif
 	if(UDPsend(saIP,saport,info)==-1)
 		return -2;

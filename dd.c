@@ -31,8 +31,6 @@ int main(int argc, char **argv)
 	person *me;
 	db * mydb =  dbcreate();
 
-//	memset(buf, 0, BUF_LEN);
-
 	if(saIPs==NULL)
 	{
 		exit(1);
@@ -120,11 +118,11 @@ int main(int argc, char **argv)
 	struct sockaddr_in caller_addr;
 	unsigned int caller_addr_size;
 	person *interloc=NULL;
-
-	int v;
+	char mess[BUF_LEN];	/* never reuse this. use only if FD_ISSET(fds[TCP_fd_chat] */
 
 	connected = false;
 	chatting = false;
+	mess[0]='\0';
 
 	for(i=0; i<NR_FDS; i++)
 		fds[i]=-1;
@@ -143,7 +141,7 @@ int main(int argc, char **argv)
 					max_fd=fds[i];
 			}
 
-		i = select(max_fd+1, &rfds, NULL, NULL, NULL);
+		select(max_fd+1, &rfds, NULL, NULL, NULL);
 
 
 		if(FD_ISSET(fds[UDP_fd], &rfds))
@@ -219,7 +217,26 @@ int main(int argc, char **argv)
 			else
 			{
 				buf[err] = 0;	/* add \0 to the end. TCPrecv does not add \0 */
-				MSS(buf);
+
+				err = false;
+				if((strlen(mess)+strlen(buf)+1)>BUF_LEN)
+				{
+					strncat(mess, buf, BUF_LEN-strlen(mess)-1); /* -1 for \0 */
+					err = true;	/* mess is full. will have to write to screen right away */
+					puts("> Some characters were lost at the end of the following message.");
+				}
+				else
+					strcat(mess, buf);
+
+				if(strchr(mess, '\n')!=NULL || err==true)
+				{
+					MSS(mess);
+					mess[0]='\0';	/* ready mess to receive brand new messages */
+				}
+				#ifdef DEBUG
+				else
+				puts("received fractioned message. will try to reconstruct. waiting for \\n");
+				#endif
 			}
 		}
 
@@ -470,13 +487,13 @@ int main(int argc, char **argv)
 						chatting=false;
 					}
 
-					v=leave(me, saIP, saport, mydb);
+					err=leave(me, saIP, saport, mydb);
 
-					if(v!=0)
+					if(err!=0)
 					{
 						/*do something about it*/		
 						#ifdef DEBUG
-						printf("leave ERROR:%d\n",v);
+						printf("leave ERROR:%d\n", err);
 						#endif
 					}
 					connected=false;
