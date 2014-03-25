@@ -78,8 +78,12 @@ int UDPprocess(db * mydb, person * me)
 	}
 	else if(strncmp("QRY",mssaux,3)==0)
 	{
-		if(QRY(mydb,received)!=0)
+		i=QRY(mydb, received);
+		if(i<0)
+		{
+			printf("REG Error: %d\n",i);
 			return -3;
+		}
 	}
 	else if(strncmp("UNR",mssaux,3)==0)
 	{
@@ -237,7 +241,7 @@ int QRY(db * mydb, UDPmssinfo * received)
 		if(UDPsendtosender(received,"RPL")==-1)
 			return -2;
 		else
-			return -3;
+			return 1;
 	}
 
 	IPn = htonl(getpersonIP(person_aux));
