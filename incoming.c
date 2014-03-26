@@ -3,6 +3,7 @@
 #include "database.h"
 #include "inetutils.h"
 #include "incoming.h"
+#include "okinfo.h"
 #include <arpa/inet.h>
 #include "string.h"
 #include <stdio.h>
@@ -39,6 +40,25 @@ int OK(unsigned long IP,unsigned short port)
 	if(strncmp("OK",UDPgetmss(received),2)!=0)
 		return -1;
 	UDPfreemssinfo(received);
+	return 0;
+}
+
+int OKlistrcv(list ** OK_list)
+{
+	OKinfo * OKrcv;
+	UDPmssinfo * received;
+
+while(*OK_list!=NULL)
+{
+	received = UDPrecv();
+	if(strncmp("OK",UDPgetmss(received),2)!=0)
+		return -1;
+	OKrcv=OKinfocreate(UDPgetIP(received), UDPgetport(received));
+	if(OKsearchandrm(OK_list , OKrcv)==-1)
+		return -2;
+	OKinfofree(OKrcv);
+	UDPfreemssinfo(received);
+}
 	return 0;
 }
 

@@ -6,6 +6,7 @@
 #include "define.h"
 #include "incoming.h"
 #include "TCPlib.h"
+#include "okinfo.h"
 #include <string.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -149,8 +150,10 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			puts("Register myself on everyone's list");
 		#endif
 		int i;
-		list * aux_list;		
-
+		list * aux_list;
+		list * OK_REG=LSTinit();
+		OKinfo * OK_aux;		
+/*Send all REGs and save the OKinfo on the list*/
 		for(i=0;i<255;i++)
 		{
 			if(mydb->db_table[i]!=NULL)
@@ -162,12 +165,17 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 					{
 						if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),info)==-1)
 							return -11;
-						if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
-							return -12;
+						OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
+						OK_REG=LSTadd(OK_REG, OK_aux);
 					}		
 				}
 			}
 		}
+
+/*Now receive the OKs*/
+
+		if(OKlistrcv(&OK_REG)!=0)
+			return -12;
 		personfree(auth);
 		return fdUDP;
 	}

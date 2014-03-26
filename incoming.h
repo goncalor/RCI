@@ -14,6 +14,7 @@ Verifies if an "OK" string was received from port at IP
 returns 0 on sucess -1 on error
 ******************************************************/
 int OK(unsigned long IP,unsigned short port);
+int OKlistrcv(list ** OK_list);
 int UDPprocess(db * mydb,person * me);
 int REG(db * mydb, UDPmssinfo * received);
 int DNS(db * mydb, UDPmssinfo * received, person * me);

@@ -122,6 +122,16 @@ char * UDPgetmss(UDPmssinfo *a)
 {
 	return a->message;
 }
+unsigned long UDPgetIP(UDPmssinfo *a)
+{
+	return a->sender.sin_addr.s_addr;
+}
+
+unsigned short UDPgetport(UDPmssinfo *a)
+{
+	return a->sender.sin_port;
+}
+
 
 int UDPcmpsender(unsigned long IP,unsigned short port, UDPmssinfo *a)
 {

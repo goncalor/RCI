@@ -51,6 +51,10 @@ Returns a pointer to the message in UDPmssinfo
 *******************************************************************/
 char * UDPgetmss(UDPmssinfo *);
 
+unsigned long UDPgetIP(UDPmssinfo *);
+
+unsigned short UDPgetport(UDPmssinfo *);
+
 /*******************************************************************
 Compares the sender info with the IP and port given
 
