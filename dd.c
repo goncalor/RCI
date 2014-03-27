@@ -5,6 +5,7 @@
 #include "database.h"
 #include "interface.h"
 #include "incoming.h"
+#include "mpchat.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -14,7 +15,8 @@
 
 #define BUF_LEN 1024
 #define COMM_LEN 40
-#define NR_FDS 4
+#define NR_CHATS 15
+#define NR_FDS 3 + NR_CHATS
 
 #define DEBUG
 
@@ -105,12 +107,12 @@ int main(int argc, char **argv)
 
 /*-------- END check arguments --------*/
 
-/*-------- parse user commands --------*/
+/*-------- parse user commands, connections, etc --------*/
 
 	fd_set rfds;
 	FD_ZERO(&rfds);
 	int max_fd;
-	int i, fds[NR_FDS];
+	int i, fds[NR_FDS], fd_aux, nr_chats;
 	enum {stdin_fd, TCP_fd, UDP_fd, TCP_fd_chat};
 	enum {false, true};
 	char connected, chatting;
@@ -118,14 +120,20 @@ int main(int argc, char **argv)
 	struct sockaddr_in caller_addr;
 	unsigned int caller_addr_size;
 	person *interloc=NULL;
-	char mess[BUF_LEN];	/* never reuse this. use only if FD_ISSET(fds[TCP_fd_chat] */
+	char *mess;	/* never reuse this. use only if FD_ISSET(fds[TCP_fd_chat] */
+	list *connections=NULL;
+	connection *connections_quick[NR_FDS];
 
 	connected = false;
 	chatting = false;
-	mess[0]='\0';
+	nr_chats = 0;
+//	mess[0]='\0';
 
 	for(i=0; i<NR_FDS; i++)
+	{
 		fds[i]=-1;
+//		connections_quick[i] = NULL;
+	}
 
 	fds[stdin_fd]=0;	/* 0 is fd for stdin */
 
@@ -166,13 +174,20 @@ int main(int argc, char **argv)
 			puts("TCP connection came in for TCP_fd");
 			#endif
 
-			if(chatting==false)
+			if(nr_chats<NR_CHATS)
 			{
 				caller_addr_size = sizeof(caller_addr);
-				fds[TCP_fd_chat] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
+
+				for(fd_aux=TCP_fd_chat; fd_aux<NR_FDS; fd_aux++)	/* find one unused fd */
+					if(fds[fd_aux]<0)
+						break;
+				fds[fd_aux] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
+				connections = chat_add(fds[fd_aux], ntohl(caller_addr.sin_addr.s_addr), ntohs(caller_addr.sin_port), connections);
+				connections_quick[fd_aux] = LSTgetitem(connections);	/* chat_add() adds at begining of list */
+				nr_chats++;	/* we're chatting with one more person */
 				chatting = true;
 
-				printf("> Now chatting with ...\n");
+				printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
 			}
 			else
 			{
@@ -188,57 +203,81 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if(FD_ISSET(fds[TCP_fd_chat], &rfds))	/* incoming message on chat */
-		{
-			#ifdef DEBUG
-			puts("TCP connection came in for TCP_fd CHAT");
-			#endif
 
-			/*preprocess received string (read till \n)*/
-
-			err = TCPrecv(fds[TCP_fd_chat], buf, BUF_LEN-1); /* leave room for \0 added below */
-			if(err<0)
+		for(fd_aux=TCP_fd_chat; fd_aux<NR_FDS; fd_aux++)
+			if(FD_ISSET(fds[fd_aux], &rfds))	/* incoming message on chat */
 			{
-				if(err==-2)
-				{
-					#ifdef DEBUG
-					puts("chat terminated by peer");
-					#endif
-
-					puts("> Chat closed by peer.");
-
-					close(fds[TCP_fd_chat]);
-					fds[TCP_fd_chat] = -1;
-					chatting = 0;
-				}
-				else
-					puts("> Failed to receive some message.");
-			}
-			else
-			{
-				buf[err] = 0;	/* add \0 to the end. TCPrecv does not add \0 */
-
-				err = false;
-				if((strlen(mess)+strlen(buf)+1)>BUF_LEN)
-				{
-					strncat(mess, buf, BUF_LEN-strlen(mess)-1); /* -1 for \0 */
-					err = true;	/* mess is full. will have to write to screen right away */
-					puts("> Some characters were lost at the end of the following message.");
-				}
-				else
-					strcat(mess, buf);
-
-				if(strchr(mess, '\n')!=NULL || err==true)
-				{
-					MSS(mess);
-					mess[0]='\0';	/* ready mess to receive brand new messages */
-				}
 				#ifdef DEBUG
-				else
-				puts("received fractioned message. will try to reconstruct. waiting for \\n");
+				puts("TCP connection came in for TCP_fd CHAT");
 				#endif
+
+				/*preprocess received string (read till \n)*/
+
+				err = TCPrecv(fds[fd_aux], buf, BUF_LEN-1); /* leave room for \0 added below */
+				if(err<0)
+				{
+					if(err==-2)
+					{
+						#ifdef DEBUG
+						puts("chat terminated by peer");
+						#endif
+
+						puts("> Chat closed by peer.");
+
+						connections = chat_remove(fd_aux, connections);	/* remove connection from list */
+						close(fds[fd_aux]);
+						fds[fd_aux] = -1;
+						nr_chats--;
+
+						printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
+
+						if(nr_chats==0)
+							chatting = false;
+					}
+					else
+						puts("> Failed to receive some message.");
+				}
+				else
+				{
+					buf[err] = 0;	/* add \0 to the end. TCPrecv does not add \0 */
+
+					err = false;
+					mess = connections_quick[fd_aux]->mess;
+
+					if((strlen(mess)+strlen(buf)+1)>BUF_LEN)
+					{
+						strncat(mess, buf, BUF_LEN-strlen(mess)-1); /* -1 for \0 */
+						err = true;	/* mess is full. will have to write to screen right away */
+						puts("> Some characters were lost at the end of the following message.");
+					}
+					else
+						strcat(mess, buf);
+
+					if(strchr(mess, '\n')!=NULL || err==true)
+					{
+						if(strncmp(mess, "MSS", 3)==0)
+							MSS(mess);
+						else if(strncmp(mess, "LST\n", 4)==0)
+						{
+							/* save list of people chatting. connect to everyone */
+
+							connections = chat_LST(&nr_chats, mess, connections);
+
+
+/							connections_quick[fd_aux] = LSTgetitem(connections);
+						}
+						else if(strncmp(mess, "WHO\n", 4)==0)
+							chat_send_LST(fds[fd_aux], connections);
+
+						mess[0]='\0';	/* ready mess to receive brand new messages */
+					}
+					#ifdef DEBUG
+					else
+					puts("received fractioned message. will try to reconstruct. waiting for \\n");
+					#endif
+				}
 			}
-		}
+		/*--- END for(TCP_fd_chat) ---*/
 
 		if(FD_ISSET(fds[stdin_fd], &rfds))	/* something was written */
 		{
@@ -322,13 +361,19 @@ int main(int argc, char **argv)
 					fds[TCP_fd] = -1;
 					fds[UDP_fd] = -1;
 
-					if(chatting==true)	/* leave from current chat */
+					for(i=TCP_fd_chat; i<NR_FDS; i++)
 					{
-						close(fds[TCP_fd_chat]);
-						fds[TCP_fd_chat] = -1;
-
-						chatting=false;
+						fd_aux = fds[i];
+						if(fd_aux>0)
+						{
+							close(fds[i]);
+							fds[i] = -1;
+							connections = chat_remove(fd_aux, connections);
+							nr_chats--;
+						}
 					}
+					// nr_chats = 0;
+					chatting = false;
 
 					err=leave(me, saIP, saport, mydb);
 
@@ -407,6 +452,14 @@ int main(int argc, char **argv)
 							default:
 								printf("> Now connected to %s.%s.\n", name, surname);
 								chatting=true;
+
+			/					connections = chat_add(fds[TCP_fd_chat], 0, 0, connections);
+								connections_quick[TCP_fd_chat] = LSTgetitem(connections);
+								err = chat_send_WHO(fds[TCP_fd_chat]);	/* get list of who is in the conversation */
+								#ifdef DEBUG
+								if(err!=0)
+								puts("failed to send WHO");
+								#endif
 						}
 					}
 					else
@@ -423,10 +476,19 @@ int main(int argc, char **argv)
 
 				if(chatting==true)	/* leave from current chat */
 				{
-					close(fds[TCP_fd_chat]);
-					fds[TCP_fd_chat] = -1;
-
-					chatting=false;
+					for(i=TCP_fd_chat; i<NR_FDS; i++)
+					{
+						fd_aux = fds[i];
+						if(fd_aux>0)
+						{
+							close(fds[i]);
+							fds[i] = -1;
+							connections = chat_remove(fd_aux, connections);
+							nr_chats--;
+						}
+					}
+					// nr_chats = 0;
+					chatting = false;
 				}
 				else
 					puts("> You were disconnected already");

@@ -54,7 +54,7 @@ int dbinsertperson(db * mydb, person * toinsert)
 int dbrmperson(db * mydb, person * toremov)
 {
 	list * aux, *  aux2=NULL;
-	for(aux=mydb->db_table[(int)toremov->name[0]]; !LSTapply(aux,(Item(*)(Item, Item)) personcmp, toremov) && aux!=NULL; aux=LSTfollowing(aux))
+	for(aux=mydb->db_table[(int)toremov->name[0]]; aux!=NULL && !LSTapply(aux,(Item(*)(Item, Item)) personcmp, toremov); aux=LSTfollowing(aux))
 	{
 		aux2=aux;
 	}
