@@ -121,8 +121,8 @@ int main(int argc, char **argv)
 	unsigned int caller_addr_size;
 	person *interloc=NULL;
 	char *mess;	/* never reuse this. use only if FD_ISSET(fds[TCP_fd_chat] */
-	list *connections=NULL;
-	connection *connections_quick[NR_FDS];
+	connection *connections[NR_FDS+1];	/* \1 terminated */
+	connections[NR_FDS] = (connection*)1;
 
 	connected = false;
 	chatting = false;
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 	for(i=0; i<NR_FDS; i++)
 	{
 		fds[i]=-1;
-//		connections_quick[i] = NULL;
+		connections[i] = NULL;
 	}
 
 	fds[stdin_fd]=0;	/* 0 is fd for stdin */
@@ -178,12 +178,13 @@ int main(int argc, char **argv)
 			{
 				caller_addr_size = sizeof(caller_addr);
 
-				for(fd_aux=TCP_fd_chat; fd_aux<NR_FDS; fd_aux++)	/* find one unused fd */
-					if(fds[fd_aux]<0)
-						break;
-				fds[fd_aux] = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
-				connections = chat_add(fds[fd_aux], ntohl(caller_addr.sin_addr.s_addr), ntohs(caller_addr.sin_port), connections);
-				connections_quick[fd_aux] = LSTgetitem(connections);	/* chat_add() adds at begining of list */
+				fd_aux = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
+				i = chat_add(fd_aux, ntohl(caller_addr.sin_addr.s_addr), ntohs(caller_addr.sin_port), connections);
+				if(i<0)
+				#ifdef DEBUG
+				puts("something went wrong 1");
+				#endif
+				fds[i] = fd_aux;
 				nr_chats++;	/* we're chatting with one more person */
 				chatting = true;
 
@@ -204,7 +205,7 @@ int main(int argc, char **argv)
 		}
 
 
-		for(fd_aux=TCP_fd_chat; fd_aux<NR_FDS; fd_aux++)
+		for(fd_aux=TCP_fd_chat; fd_aux<NR_FDS; fd_aux++)	/* do not change fd_aux in this loop! */
 			if(FD_ISSET(fds[fd_aux], &rfds))	/* incoming message on chat */
 			{
 				#ifdef DEBUG
@@ -224,7 +225,7 @@ int main(int argc, char **argv)
 
 						puts("> Chat closed by peer.");
 
-						connections = chat_remove(fd_aux, connections);	/* remove connection from list */
+						i = chat_remove(fds[fd_aux], connections);	/* remove connection from list */
 						close(fds[fd_aux]);
 						fds[fd_aux] = -1;
 						nr_chats--;
@@ -242,7 +243,7 @@ int main(int argc, char **argv)
 					buf[err] = 0;	/* add \0 to the end. TCPrecv does not add \0 */
 
 					err = false;
-					mess = connections_quick[fd_aux]->mess;
+					mess = connections[fd_aux]->mess;
 
 					if((strlen(mess)+strlen(buf)+1)>BUF_LEN)
 					{
@@ -259,15 +260,28 @@ int main(int argc, char **argv)
 							MSS(mess);
 						else if(strncmp(mess, "LST\n", 4)==0)
 						{
+							#ifdef DEBUG
+							puts("received LST");
+							#endif
+
 							/* save list of people chatting. connect to everyone */
 
-							connections = chat_LST(&nr_chats, mess, connections);
+							chat_LST(&nr_chats, mess, connections);
 
-
-/							connections_quick[fd_aux] = LSTgetitem(connections);
+							for(i=TCP_fd_chat; i<NR_FDS; i++)
+								fds[i] = connections[i]->fd;
 						}
 						else if(strncmp(mess, "WHO\n", 4)==0)
-							chat_send_LST(fds[fd_aux], connections);
+						{
+							#ifdef DEBUG
+							puts("received WHO");
+							#endif
+
+							err = chat_send_LST(fds[fd_aux], connections);
+							#ifdef DEBUG
+							printf("error sending connections list. err = %d", err);
+							#endif							
+						}
 
 						mess[0]='\0';	/* ready mess to receive brand new messages */
 					}
@@ -337,7 +351,7 @@ int main(int argc, char **argv)
 							puts("Could not create TCP server");
 							#endif
 						}
-						if(listen(fds[TCP_fd], 2)==-1)
+						if(listen(fds[TCP_fd], NR_CHATS)==-1)
 						{
 							/*do something about it*/
 							#ifdef DEBUG
@@ -367,8 +381,8 @@ int main(int argc, char **argv)
 						if(fd_aux>0)
 						{
 							close(fds[i]);
+							chat_remove(fd_aux, connections);
 							fds[i] = -1;
-							connections = chat_remove(fd_aux, connections);
 							nr_chats--;
 						}
 					}
@@ -440,7 +454,7 @@ int main(int argc, char **argv)
 				{
 					if(chatting==false)
 					{
-						err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, me, mydb);
+						err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, &interloc, me, mydb);
 						switch(err)
 						{
 							case -1:
@@ -453,8 +467,8 @@ int main(int argc, char **argv)
 								printf("> Now connected to %s.%s.\n", name, surname);
 								chatting=true;
 
-			/					connections = chat_add(fds[TCP_fd_chat], 0, 0, connections);
-								connections_quick[TCP_fd_chat] = LSTgetitem(connections);
+								chat_add(fds[TCP_fd_chat], getpersonIP(interloc), getpersonTCPport(interloc), connections);
+		//						personfree(interloc);	/* not necessary anymore */
 								err = chat_send_WHO(fds[TCP_fd_chat]);	/* get list of who is in the conversation */
 								#ifdef DEBUG
 								if(err!=0)
@@ -482,12 +496,11 @@ int main(int argc, char **argv)
 						if(fd_aux>0)
 						{
 							close(fds[i]);
+							chat_remove(fd_aux, connections);
 							fds[i] = -1;
-							connections = chat_remove(fd_aux, connections);
 							nr_chats--;
 						}
-					}
-					// nr_chats = 0;
+					}					// nr_chats = 0;
 					chatting = false;
 				}
 				else
@@ -506,10 +519,16 @@ int main(int argc, char **argv)
 				{
 					if(chatting==true)
 					{
-						if(message(fds[TCP_fd_chat], buf, me)==0)
-							printf("%s\n", buf);
-						else
-							puts("> Unable to send message.");
+						for(i=TCP_fd_chat; i<NR_FDS; i++)
+						{
+							fd_aux = fds[i];
+							if(fd_aux>0)
+							{
+								if(message(fd_aux, buf, me)!=0)
+									puts("> Unable to send message.");
+							}
+						}
+						printf("%s\n", buf);
 					}
 					else
 					{

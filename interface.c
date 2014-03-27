@@ -504,20 +504,24 @@ int message(int fd, char *message, person *me)
 }
 
 /* returns a file descriptor for communication on success. returns negative on error */
-int Connect(unsigned long saIP, unsigned short saport, char *name, char *surname, person *me, db *mydb)
+int Connect(unsigned long saIP, unsigned short saport, char *name, char *surname, person **found, person *me, db *mydb)
 {
 	int err, fd;
-	person *found;
 
-	err = find(saIP, saport, name, surname, &found, me, mydb);
+	err = find(saIP, saport, name, surname, found, me, mydb);
 	if(err!=0)
+	{
+		personfree(*found);
 		return -1;	/* person not found */
+	}
 
-	fd = TCPconnect(getpersonIP(found), getpersonTCPport(found));
-	personfree(found);	/* not necessary anymore */
+	fd = TCPconnect(getpersonIP(*found), getpersonTCPport(*found));
 	if(fd<0)
+	{
+		personfree(*found);	/* not necessary anymore */
 		return -2;	/* unable to connect */
+	}
 
-	return fd;
+	return fd;	/* remember to destroy found outside */
 }
 
