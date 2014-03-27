@@ -122,7 +122,6 @@ int main(int argc, char **argv)
 	person *interloc=NULL;
 	char *mess;	/* never reuse this. use only if FD_ISSET(fds[TCP_fd_chat] */
 	connection *connections[NR_FDS+1];	/* \1 terminated */
-	connections[NR_FDS] = (connection*)1;
 
 	connected = false;
 	chatting = false;
@@ -134,6 +133,7 @@ int main(int argc, char **argv)
 		fds[i]=-1;
 		connections[i] = NULL;
 	}
+	connections[NR_FDS] = (connection*)1;
 
 	fds[stdin_fd]=0;	/* 0 is fd for stdin */
 
@@ -179,10 +179,10 @@ int main(int argc, char **argv)
 				caller_addr_size = sizeof(caller_addr);
 
 				fd_aux = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
-				i = chat_add(fd_aux, ntohl(caller_addr.sin_addr.s_addr), ntohs(caller_addr.sin_port), connections);
+				i = chat_add(-1, 0, 0, connections);
 				if(i<0)
 				#ifdef DEBUG
-				puts("something went wrong 1");
+				puts("something went wrong adding new connection");
 				#endif
 				fds[i] = fd_aux;
 				nr_chats++;	/* we're chatting with one more person */
@@ -269,7 +269,12 @@ int main(int argc, char **argv)
 							chat_LST(&nr_chats, mess, connections);
 
 							for(i=TCP_fd_chat; i<NR_FDS; i++)
-								fds[i] = connections[i]->fd;
+								if(connections[i]!=NULL)
+									fds[i] = connections[i]->fd;
+
+							#ifdef DEBUG
+							puts("all people added to connections");
+							#endif
 						}
 						else if(strncmp(mess, "WHO\n", 4)==0)
 						{
@@ -277,9 +282,14 @@ int main(int argc, char **argv)
 							puts("received WHO");
 							#endif
 
+							chat_WHO(fds[fd_aux], mess, connections);
+
 							err = chat_send_LST(fds[fd_aux], connections);
 							#ifdef DEBUG
-							printf("error sending connections list. err = %d", err);
+							if(err!=0)
+								printf("error sending connections list. err = %d\n", err);
+							else
+								puts("sent list of connections");
 							#endif							
 						}
 
@@ -469,7 +479,8 @@ int main(int argc, char **argv)
 
 								chat_add(fds[TCP_fd_chat], getpersonIP(interloc), getpersonTCPport(interloc), connections);
 		//						personfree(interloc);	/* not necessary anymore */
-								err = chat_send_WHO(fds[TCP_fd_chat]);	/* get list of who is in the conversation */
+								err = chat_send_WHO(fds[TCP_fd_chat], ddIP, talkport);	/* get list of who is in the conversation */
+								nr_chats++;
 								#ifdef DEBUG
 								if(err!=0)
 								puts("failed to send WHO");
