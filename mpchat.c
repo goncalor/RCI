@@ -10,7 +10,17 @@
 
 #define DEBUG
 
-int chat_send_WHO(int fd, unsigned long myIP, unsigned short myport)
+int chat_send_WHO(int fd)
+{
+	int err;
+	char message[BUF_LEN] = "WHO\n";	/*remember server waits for a \n to recognise EO message */
+	int len = strlen(message);
+
+	err = TCPsend(fd, message, len);
+	return err;
+}
+
+int chat_send_ADD(int fd, unsigned long myIP, unsigned short myport)
 {
 	int err;
 	char message[BUF_LEN];	/*remember server waits for a \n to recognise EO message */
@@ -18,7 +28,7 @@ int chat_send_WHO(int fd, unsigned long myIP, unsigned short myport)
 	int len;
 
 	message[0]='\0';
-	strcat(message, "WHO\n");
+	strcat(message, "ADD\n");
 	sprintf(str, "%lu;%hu\n", myIP, myport);
 	strcat(message, str);
 
@@ -27,23 +37,23 @@ int chat_send_WHO(int fd, unsigned long myIP, unsigned short myport)
 	return err;
 }
 
-int chat_WHO(int fd, char *mess, connection **connections)
+int chat_ADD(int fd, char *mess, connection **connections)
 {
 	unsigned long IP;
 	unsigned short port;
 	int i;
 
-	if(sscanf(mess, "WHO\n%lu;%hu\n", &IP, &port)!=2)
+	if(sscanf(mess, "ADD\n%lu;%hu\n", &IP, &port)!=2)
 	{
 		#ifdef DEBUG
-		printf("received malformated WHO: %s", mess);
+		printf("received malformated ADD: %s", mess);
 		#endif
 		return -1;
 	}
 
 	for(i=FIRST_FD; connections[i]!=(connection*)1; i++)
 	{
-		if(connections[i]!=NULL && connections[i]->fd==-1)
+		if(connections[i]!=NULL && connections[i]->fd==fd)
 			break;
 	}
 	if(connections[i]==(connection*)1)
@@ -84,12 +94,12 @@ int chat_send_LST(int fd, connection **connections)
 	return err;
 }
 
-int chat_LST(int *nr_chats, char *mess, connection **connections)
+int chat_LST(int *nr_chats, char *mess, unsigned long myIP, unsigned short myport, connection **connections)
 {
 	char *aux;
 	unsigned long IP;
 	unsigned short port;
-	int fd;
+	int fd, err;
 
 	#ifdef DEBUG
 	printf("received connections list: %s", mess);
@@ -112,7 +122,7 @@ int chat_LST(int *nr_chats, char *mess, connection **connections)
 		printf("connecting to %08lX:%d\n", /*(unsigned long)htonl*/(IP), /*htons*/(port));
 		#endif
 
-		fd = TCPconnect(IP, port);
+		fd = TCPconnect(IP, port);	/* connect to connection just discovered */
 		if(fd<0)
 		{
 			#ifdef DEBUG
@@ -120,8 +130,15 @@ int chat_LST(int *nr_chats, char *mess, connection **connections)
 			#endif
 			return -1;
 		}
-		chat_add(fd, IP, port, connections);
-		nr_chats++;
+
+		err = chat_send_ADD(fd, myIP, myport);	/* ask to be added to their connections list */
+		#ifdef DEBUG
+		if(err!=0)
+		puts("failed to send ADD in chat_LST()");
+		#endif
+
+		chat_add(fd, IP, port, connections);	/* store new connection */
+		(*nr_chats)++;
 
 		aux = strchr(aux, '\n');
 		aux++;	/* move to next in list*/

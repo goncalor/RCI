@@ -25,23 +25,14 @@ int main(int argc, char **argv)
 	unsigned short talkport=7000;
 	unsigned short dnsport=7000;
 	unsigned short saport=58000;
-	unsigned long *saIPs = getIPbyname("tejo.ist.utl.pt");
-	unsigned long saIP;
+	unsigned long *saIPs;
+	unsigned long saIP=0;
 	unsigned long ddIP;
 	char *username, name[NAME_LEN], surname[NAME_LEN];
 	char buf[BUF_LEN], comm[COMM_LEN];
 	person *me;
 	db * mydb =  dbcreate();
 
-	if(saIPs==NULL)
-	{
-		exit(1);
-	}
-	else
-	{
-		saIP = saIPs[0];
-		free(saIPs);
-	}
 
 
 /*-------- check arguments --------*/
@@ -89,6 +80,21 @@ int main(int argc, char **argv)
 				case '?': usage(argv[0]); exit(6);
 			}
 		}
+
+		if(saIP==0)
+		{
+			saIPs = getIPbyname("tejo.ist.utl.pt");
+			if(saIPs==NULL)
+			{
+				exit(1);
+			}
+			else
+			{
+				saIP = saIPs[0];
+				free(saIPs);
+			}
+		}
+
 	}
 
 
@@ -141,6 +147,7 @@ int main(int argc, char **argv)
 	{
 		err = 0;
 		max_fd = 0;
+		FD_ZERO(&rfds);
 		for(i=0; i<NR_FDS; i++)
 			if(fds[i]>=0)
 			{
@@ -179,7 +186,7 @@ int main(int argc, char **argv)
 				caller_addr_size = sizeof(caller_addr);
 
 				fd_aux = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
-				i = chat_add(-1, 0, 0, connections);
+				i = chat_add(fd_aux, 0, 0, connections);
 				if(i<0)
 				#ifdef DEBUG
 				puts("something went wrong adding new connection");
@@ -188,7 +195,7 @@ int main(int argc, char **argv)
 				nr_chats++;	/* we're chatting with one more person */
 				chatting = true;
 
-				printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
+//				printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
 			}
 			else
 			{
@@ -225,7 +232,7 @@ int main(int argc, char **argv)
 
 						puts("> Chat closed by peer.");
 
-						i = chat_remove(fds[fd_aux], connections);	/* remove connection from list */
+						i = chat_remove(fds[fd_aux], connections);	/* remove connection from list. frees conn */
 						close(fds[fd_aux]);
 						fds[fd_aux] = -1;
 						nr_chats--;
@@ -266,7 +273,7 @@ int main(int argc, char **argv)
 
 							/* save list of people chatting. connect to everyone */
 
-							chat_LST(&nr_chats, mess, connections);
+							chat_LST(&nr_chats, mess, ddIP, talkport, connections);
 
 							for(i=TCP_fd_chat; i<NR_FDS; i++)
 								if(connections[i]!=NULL)
@@ -275,14 +282,13 @@ int main(int argc, char **argv)
 							#ifdef DEBUG
 							puts("all people added to connections");
 							#endif
+							printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
 						}
 						else if(strncmp(mess, "WHO\n", 4)==0)
 						{
 							#ifdef DEBUG
 							puts("received WHO");
 							#endif
-
-							chat_WHO(fds[fd_aux], mess, connections);
 
 							err = chat_send_LST(fds[fd_aux], connections);
 							#ifdef DEBUG
@@ -291,6 +297,21 @@ int main(int argc, char **argv)
 							else
 								puts("sent list of connections");
 							#endif							
+						}
+						else if(strncmp(mess, "ADD\n", 4)==0)
+						{
+							#ifdef DEBUG
+							puts("received ADD");
+							#endif
+
+							err = chat_ADD(fds[fd_aux], mess, connections);
+							if(err!=0)
+							{
+								#ifdef DEBUG
+								printf("error while ADD ing. err = %d", err);
+								#endif
+							}
+							printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
 						}
 
 						mess[0]='\0';	/* ready mess to receive brand new messages */
@@ -426,30 +447,35 @@ int main(int argc, char **argv)
 					puts("> find name.surname");
 				else
 				{
-					err = find(saIP, saport, name, surname, &interloc, me, mydb);
-					if(err!=0)
+					if(connected==true)
 					{
-						#ifdef DEBUG
-						puts("find ended abruptly");
-						printf("find returned: %d\n", err);
-						#endif
-
-						/*do something about it*/
-						if(err==-9||err==-4||err==-12)
+						err = find(saIP, saport, name, surname, &interloc, me, mydb);
+						if(err!=0)
 						{
-							printf("> %s.%s was not found\n", name, surname);
+							#ifdef DEBUG
+							puts("find ended abruptly");
+							printf("find returned: %d\n", err);
+							#endif
+
+							/*do something about it*/
+							if(err==-9||err==-4||err==-12)
+							{
+								printf("> %s.%s was not found\n", name, surname);
+							}
+						}
+						else
+						{
+							printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
+
+							#ifdef DEBUG
+							printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonTCPport(interloc));
+							#endif
+
+							personfree(interloc);
 						}
 					}
 					else
-					{
-						printf("> Found %s.%s\n", getpersonname(interloc), getpersonsurname(interloc));
-
-						#ifdef DEBUG
-						printf("Found %s.%s at %0lX with talkport %hu\n", getpersonname(interloc), getpersonsurname(interloc), getpersonIP(interloc), getpersonTCPport(interloc));
-						#endif
-
-						personfree(interloc);
-					}
+						puts("> You are not registered. Use join to register.");
 				}
 			}
 			else if(strcmp(comm, "connect")==0)
@@ -462,35 +488,46 @@ int main(int argc, char **argv)
 					puts("> connect name.surname");
 				else
 				{
-					if(chatting==false)
+					if(connected==true)
 					{
-						err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, &interloc, me, mydb);
-						switch(err)
+						if(chatting==false)
 						{
-							case -1:
-								printf("> Could not find %s.%s.\n", name, surname);
-								break;
-							case -2:
-								printf("> Found %s.%s. Could not connect.\n", name, surname);
-								break;
-							default:
-								printf("> Now connected to %s.%s.\n", name, surname);
-								chatting=true;
+							err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, &interloc, me, mydb);
+							switch(err)
+							{
+								case -1:
+									printf("> Could not find %s.%s.\n", name, surname);
+									break;
+								case -2:
+									printf("> Found %s.%s. Could not connect.\n", name, surname);
+									break;
+								default:
+									printf("> Now connected to %s.%s.\n", name, surname);
+									chatting=true;
 
-								chat_add(fds[TCP_fd_chat], getpersonIP(interloc), getpersonTCPport(interloc), connections);
-		//						personfree(interloc);	/* not necessary anymore */
-								err = chat_send_WHO(fds[TCP_fd_chat], ddIP, talkport);	/* get list of who is in the conversation */
-								nr_chats++;
-								#ifdef DEBUG
-								if(err!=0)
-								puts("failed to send WHO");
-								#endif
+									chat_add(fds[TCP_fd_chat], getpersonIP(interloc), getpersonTCPport(interloc), connections);
+									personfree(interloc);	/* not necessary anymore */
+									err = chat_send_WHO(fds[TCP_fd_chat]);	/* get list of who is in the conversation */
+									#ifdef DEBUG
+									if(err!=0)
+									puts("failed to send WHO");
+									#endif
+									err = chat_send_ADD(fds[TCP_fd_chat], ddIP, talkport);
+									#ifdef DEBUG
+									if(err!=0)
+									puts("failed to send ADD");
+									#endif
+
+									nr_chats++;
+							}
+						}
+						else
+						{
+							puts("> You are connected already. Use leave before connecting again.");
 						}
 					}
 					else
-					{
-						puts("> You are connected already. Use leave before connecting again.");
-					}
+						puts("> You are not registered. Use join to register.");
 				}
 			}
 			else if(strcmp(comm, "disconnect")==0)
