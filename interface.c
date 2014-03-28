@@ -45,13 +45,19 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 	/*It will block if no answer*/
 	UDPmssinfo * received = UDPrecv();
 	if(received==NULL)
+	{
+		UDPfreemssinfo(received);	
 		return -3;
+	}
 	#ifdef DEBUG
 			printf("Received:%s\n",UDPgetmss(received));
 		#endif
 
 	if(UDPcmpsender(saIP,saport,received)!=0)
+	{
+		UDPfreemssinfo(received);	
 		return -4;
+	}
 
 	char name[BUF_LEN];
 	char surname[BUF_LEN];
@@ -59,7 +65,10 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 	unsigned short UDPport;
 
 	if(sscanf(UDPgetmss(received),"DNS %[^.].%[^;];%[^;];%hu",name, surname,IP,&UDPport)!=4)
-		return -11;
+	{
+		UDPfreemssinfo(received);	
+		return -5;
+	}
 
 	UDPfreemssinfo(received);
 
@@ -81,7 +90,10 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		personupdate(auth,atoh(IP),UDPport, getpersonTCPport(me), name, surname);
 	
 		if(dbinsertperson(mydb,auth)==-1)
-			return -5;
+		{
+			personfree(auth);
+			return -6;
+		}
 		Iamtheauth(mydb);
 		return fdUDP;	
 
@@ -101,11 +113,23 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		- REG yourself in all		
 		- Return*/
 		if(UDPsend(getpersonIP(auth),getpersonUDPport(auth),info)==-1)
-			return -6;
+		{
+			personfree(auth);
+			return -7;
+		}
 		UDPmssinfo * LST= UDPrecv();	/*Maybe there is a problem here.we could only receive part of the message*/
+		if(LST==NULL)
+		{
+			UDPfreemssinfo(LST);
+			personfree(auth);	
+			return -8;
+		}
 		if(UDPcmpsender(getpersonIP(auth),getpersonUDPport(auth),LST)!=0)
-			return -7; /* WTF just happened?*/
-			
+		{
+			UDPfreemssinfo(LST);
+			personfree(auth);	
+			return -9;
+		}			
 
 		Iamnottheauth(mydb);
 

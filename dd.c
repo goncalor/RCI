@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <sys/select.h>
+#include <errno.h>
 
 #define BUF_LEN 1024
 #define COMM_LEN 40
@@ -361,12 +362,35 @@ int main(int argc, char **argv)
 					if(fds[UDP_fd]<0)
 					{
 						/*do something about it*/
+
+						puts("> Join Failed");	
+
 						#ifdef DEBUG
-						printf("join Error:%d\n\n",fds[UDP_fd]);
+						printf("join Error:%d\n\n Errno is:%d\t%s",fds[UDP_fd],errno, strerror(errno));
+						#endif
+
+						
 
 						if(fds[UDP_fd]==-1)
+						{
+						#ifdef DEBUG
 							puts("UDPcreate error");
 						#endif
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9) {
+							connected=false;
+							puts("> Try joining again");	
+						} else if(fds[UDP_fd]==-6) {
+
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
+
+
+
 					}
 					else
 					{
@@ -652,7 +676,7 @@ int main(int argc, char **argv)
 				if(listSA(saIP, saport)!=0)
 				{
 					#ifdef DEBUG
-					puts("list error");
+					puts("list ");
 					#endif
 				}
 
