@@ -643,6 +643,22 @@ int main(int argc, char **argv)
 
 				exit(0);
 			}
+			else if(strcmp(comm, "list")==0)
+			{
+				#ifdef DEBUG
+				puts("list");
+				#endif
+
+				if(listSA(saIP, saport)!=0)
+				{
+					#ifdef DEBUG
+					puts("list error");
+					#endif
+				}
+
+				
+
+			}
 			else
 			{
 				printf("> Unknown command '%s'\n", comm);

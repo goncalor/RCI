@@ -192,6 +192,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	unsigned long authIP, SC_IP;
 	person *aux;
 
+	found = NULL;
 	if(strcmp(getpersonsurname(me), surname)==0)
 	{
 		#ifdef DEBUG
@@ -527,7 +528,8 @@ int Connect(unsigned long saIP, unsigned short saport, char *name, char *surname
 	err = find(saIP, saport, name, surname, found, me, mydb);
 	if(err!=0)
 	{
-		personfree(*found);
+		if(*found!=NULL)
+			personfree(*found);
 		return -1;	/* person not found */
 	}
 
@@ -539,5 +541,60 @@ int Connect(unsigned long saIP, unsigned short saport, char *name, char *surname
 	}
 
 	return fd;	/* remember to destroy found outside */
+}
+
+
+int listSA(unsigned long saIP, unsigned short saport)
+{
+	char name[BUF_LEN], surname[BUF_LEN], IPascii[20];
+	char * str_aux;
+	unsigned short UDPport;
+	UDPmssinfo *received;
+
+	if(UDPsend(saIP, saport, "LST")==-1)
+	{
+		return -1;
+	}
+
+	/* get and process reply from SA */
+	received = UDPrecv();
+	if(received==NULL)
+		return -2;
+
+	if(UDPcmpsender(saIP, saport, received)!=0)
+		return -3;
+
+	str_aux=UDPgetmss(received);
+	if(strncmp(str_aux,"LST",3)!=0)
+		return -4; /* WTF just happened? 2 */			
+	str_aux=str_aux+4;
+	if(str_aux[0]=='\n')
+	{	
+		puts("No one registered");
+		UDPfreemssinfo(received);
+		return -5;
+	}
+	
+	puts("People registered on the SA:");	
+
+	do 
+	{
+		if(sscanf(str_aux,"%[^.].%[^;];%[^;];%hu", name, surname, IPascii, &UDPport)!=4)
+		{
+			#ifdef DEBUG
+				puts("LST processing error");
+			#endif
+			return -6;
+		}
+		printf("%s.%s\n",name, surname);
+		str_aux=strchr(str_aux,'\n');
+		str_aux++;
+	}while((*str_aux)!='\n');
+	
+	printf("\n\n");
+
+	UDPfreemssinfo(received);
+
+	return 0;
 }
 

@@ -119,7 +119,7 @@ int chat_LST(int *nr_chats, char *mess, unsigned long myIP, unsigned short mypor
 		}
 
 		#ifdef DEBUG
-		printf("connecting to %08lX:%d\n", /*(unsigned long)htonl*/(IP), /*htons*/(port));
+		printf("connecting to %08lX:%d\n", IP, port);
 		#endif
 
 		fd = TCPconnect(IP, port);	/* connect to connection just discovered */
