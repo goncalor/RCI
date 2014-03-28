@@ -48,17 +48,24 @@ int OKlistrcv(list ** OK_list)
 	OKinfo * OKrcv;
 	UDPmssinfo * received;
 
-while(*OK_list!=NULL)
-{
-	received = UDPrecv();
-	if(strncmp("OK",UDPgetmss(received),2)!=0)
-		return -1;
-	OKrcv=OKinfocreate(UDPgetIP(received), UDPgetport(received));
-	if(OKsearchandrm(OK_list , OKrcv)==-1)
-		return -2;
-	OKinfofree(OKrcv);
-	UDPfreemssinfo(received);
-}
+	while(*OK_list!=NULL)
+	{
+		received = UDPrecv();
+		if(strncmp("OK",UDPgetmss(received),2)!=0)
+		{
+			OKinfofree(OKrcv);
+			return -1;
+		}
+		OKrcv=OKinfocreate(UDPgetIP(received), UDPgetport(received));
+		if(OKsearchandrm(OK_list , OKrcv)==-1)
+		{
+			OKinfofree(OKrcv);
+			UDPfreemssinfo(received);
+			return -2;
+		}
+		OKinfofree(OKrcv);
+		UDPfreemssinfo(received);
+	}
 	return 0;
 }
 

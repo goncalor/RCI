@@ -385,8 +385,9 @@ int main(int argc, char **argv)
 							personfree(me);
 							dbfree(mydb);
 							exit(-1);
-						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9) {
+						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-11|| fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
 							connected=false;
+							UDPclose();
 							puts("> Try joining again");	
 						} else if(fds[UDP_fd]==-6) {
 
@@ -449,9 +450,32 @@ int main(int argc, char **argv)
 						#ifdef DEBUG
 						printf("leave ERROR:%d\n",err);
 						#endif
+						if(err==-1)
+						{
+							puts("> Leaving was unsucessfull, try leaving again.");
+						}
+						if(err==-2)
+						{
+							puts("> There was a problem when leaving. There is a change the SA and the SNP databases are corrupted. Exiting...");
+							dbclean(mydb);
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
+						if(err==-3)
+						{
+							puts("> There was a problem when leaving. We could sitll exist in some databases. Exiting...");
+							dbclean(mydb);
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
 					}
+					else 
+					{
 					connected=false;
 					puts("> You left successfully.");
+					}
 				}
 				else 
 				{

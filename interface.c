@@ -140,17 +140,18 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		person * aux_person;
 		sscanf(message,"%s",buffer);
 		if(strcmp(buffer,"LST")!=0)
-			return -8; /* WTF just happened? 2 */			
+		{
+			UDPfreemssinfo(LST);
+			personfree(auth);	
+			return -10;
+		}		
 		aux=message+strlen(buffer)+1;
 		if(aux[0]=='\n')
 		{		/*That name is already in use*/
-				#ifdef DEBUG
-					puts("Name in use;");
-				#endif
+			puts("Name already in use.");
 			personfree(auth);
-			UDPclose();
 			UDPfreemssinfo(LST);
-			return -9;
+			return -11;
 		}
 		Iamnottheauth(mydb);		
 		do 
@@ -164,7 +165,13 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			}
 			aux_person = personcreate(atoh(IP),UDPport,TCPport,name,surname);
 			if(dbinsertperson(mydb,aux_person)==-1)
-				return -10;
+			{		
+				personfree(auth);
+				personfree(aux_person);
+				UDPfreemssinfo(LST);
+				dbclean(mydb);
+				return -12;
+			}
 			aux=strchr(aux,'\n');
 			aux++;
 		}while((*aux)!='\n');
@@ -174,7 +181,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			puts("Register myself on everyone's list");
 		#endif
 		int i;
-		list * aux_list;
+		list * aux_list, * aux_list2;
 		list * OK_REG=LSTinit();
 		OKinfo * OK_aux;		
 /*Send all REGs and save the OKinfo on the list*/
@@ -188,9 +195,30 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 					if(personcmp(aux_person,me)!=1&&personcmp(aux_person,auth)!=1)
 					{
 						if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),info)==-1)
-							return -11;
+						{	
+							LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+							personfree(auth);
+							dbclean(mydb);
+							return -13;
+						}
 						OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
-						OK_REG=LSTadd(OK_REG, OK_aux);
+						if(OK_aux==NULL)
+						{		
+							LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+							personfree(auth);
+							dbclean(mydb);
+							return -14;
+						}
+						aux_list2=LSTadd(OK_REG, OK_aux);
+						if(aux_list2==NULL)
+						{		
+							LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+							personfree(auth);
+							dbclean(mydb);
+							return -15;
+						}				
+						OK_REG=aux_list2;
+			
 					}		
 				}
 			}
@@ -199,7 +227,12 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 /*Now receive the OKs*/
 
 		if(OKlistrcv(&OK_REG)!=0)
-			return -12;
+		{		
+			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+			personfree(auth);
+			dbclean(mydb);
+			return -16;
+		}			
 		personfree(auth);
 		return fdUDP;
 	}
@@ -372,9 +405,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			#endif
 			sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
 			if(UDPsend(saIP, saport,buffer)==-1)
-			{
 				return -1;
-			}
 			if(OK(saIP,saport)!=0)
 				return -1;
 			
@@ -420,28 +451,29 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 		#endif				
 
 		if(UDPsend(saIP,saport,buffer)==-1)
-			return -1;
+			return -2;
 		if(OK(saIP,saport)!=0)
-			return -1;
+			return -2;
 
 		#ifdef DEBUG
 			printf("Sending %s to new auth \n",buffer);
 		#endif		
 
 		if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
-			return -1;
+			return -2;
 		if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
-			return -1;
+			return -2;
 		
+		Iamnottheauth(mydb);
+
 		sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
 
 		#ifdef DEBUG
 			printf("Sending %s to everyone on the DB \n",buffer);
 		#endif		
 
-		list * OK_REG=LSTinit();
+		list * aux_list2,* OK_REG=LSTinit();
 		OKinfo * OK_aux;
-
 
 		for(i=0;i<255;i++)
 		{
@@ -451,17 +483,33 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				if(personcmp(aux_person,me)!=1)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
-						return -1;
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
 					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
-					OK_REG=LSTadd(OK_REG, OK_aux);
+					if(OK_aux==NULL)
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
+					aux_list2=LSTadd(OK_REG, OK_aux);
+					if(aux_list2==NULL)
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
+					OK_REG=aux_list2;
 				}
 			}
 		}
 /*Now receive the OKs*/
 
 		if(OKlistrcv(&OK_REG)!=0)
-			return -12;
-
+		{		
+			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+			return -3;
+		}			
 			/*Free the db*/
 		dbclean(mydb);
 		UDPclose();
@@ -475,7 +523,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			puts("I am leaving and I am not the auth");
 		#endif
 		sprintf(buffer,"UNR %s.%s",getpersonname(me),getpersonsurname(me));
-		list * aux_list;
+		list * aux_list, * aux_list2;
 		person * aux_person;
 
 		list * OK_REG=LSTinit();
@@ -492,9 +540,23 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				if(personcmp(aux_person,me)!=1)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
-						return -1;
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
 					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
-					OK_REG=LSTadd(OK_REG, OK_aux);
+					if(OK_aux==NULL)
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
+					aux_list2=LSTadd(OK_REG, OK_aux);
+					if(aux_list2==NULL)
+					{	
+						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						return -3;
+					}
+					OK_REG=aux_list2;
 				}
 			}
 		}
@@ -502,7 +564,10 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 /*Now receive the OKs*/
 
 		if(OKlistrcv(&OK_REG)!=0)
-			return -12;
+		{		
+			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+			return -3;
+		}		
 
 		/*Free the db*/
 		dbclean(mydb);
