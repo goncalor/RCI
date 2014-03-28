@@ -78,12 +78,12 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		-return
 	*/
 
-	personupdate(auth,atoh(IP),UDPport, getpersonTCPport(me), name, surname);
+		personupdate(auth,atoh(IP),UDPport, getpersonTCPport(me), name, surname);
 	
-	if(dbinsertperson(mydb,auth)==-1)
-		return -5;
-	Iamtheauth(mydb);
-	return fdUDP;	
+		if(dbinsertperson(mydb,auth)==-1)
+			return -5;
+		Iamtheauth(mydb);
+		return fdUDP;	
 
 	}
 	else 
@@ -414,20 +414,28 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			printf("Sending %s to everyone on the DB \n",buffer);
 		#endif		
 
+		list * OK_REG=LSTinit();
+		OKinfo * OK_aux;
+
+
 		for(i=0;i<255;i++)
 		{
 			for(aux_list=mydb->db_table[i]; aux_list!=NULL; aux_list = LSTfollowing(aux_list))
-			{				
+			{
 				aux_person = LSTgetitem(aux_list);
 				if(personcmp(aux_person,me)!=1)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
 						return -1;
-					if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
-						return -1;
+					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
+					OK_REG=LSTadd(OK_REG, OK_aux);
 				}
 			}
 		}
+/*Now receive the OKs*/
+
+		if(OKlistrcv(&OK_REG)!=0)
+			return -12;
 
 			/*Free the db*/
 		dbclean(mydb);
@@ -445,6 +453,9 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 		list * aux_list;
 		person * aux_person;
 
+		list * OK_REG=LSTinit();
+		OKinfo * OK_aux;
+
 		#ifdef DEBUG
 			printf("Sending %s to everyone on the DB with my surname \n",buffer);
 		#endif		
@@ -457,11 +468,16 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
 						return -1;
-					if(OK(getpersonIP(aux_person),getpersonUDPport(aux_person))!=0)
-						return -1;
+					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
+					OK_REG=LSTadd(OK_REG, OK_aux);
 				}
 			}
 		}
+
+/*Now receive the OKs*/
+
+		if(OKlistrcv(&OK_REG)!=0)
+			return -12;
 
 		/*Free the db*/
 		dbclean(mydb);
