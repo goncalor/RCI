@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 /* connects IP and port to the socket referred to by the return value. IP is in host byte order. when failing to create a socket returns -1; when failing to connect returns -2. sets errno in both cases. */
 int TCPconnect(unsigned long IP, unsigned short port)
@@ -45,6 +46,7 @@ int TCPsend(int fd, char *message, unsigned int len)
 	SIGPIPE signal and, by default, that would kill your process.
 
 	idea: ignore SIGPIPE and then reactivate it after all writes */
+
 	nleft = len;
 	while(nleft>0)
 	{

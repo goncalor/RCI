@@ -216,7 +216,7 @@ int find(unsigned long saIP, unsigned short saport, char *name, char *surname, p
 	unsigned long authIP, SC_IP;
 	person *aux;
 
-	found = NULL;
+	*found = NULL;
 	if(strcmp(getpersonsurname(me), surname)==0)
 	{
 		#ifdef DEBUG
@@ -557,6 +557,12 @@ int Connect(unsigned long saIP, unsigned short saport, char *name, char *surname
 		return -1;	/* person not found */
 	}
 
+	if(personcmpbyname(*found, me)==1)
+	{
+		personfree(*found);
+		return -3;
+	}
+
 	fd = TCPconnect(getpersonIP(*found), getpersonTCPport(*found));
 	if(fd<0)
 	{
@@ -590,7 +596,7 @@ int listSA(unsigned long saIP, unsigned short saport)
 
 	str_aux=UDPgetmss(received);
 	if(strncmp(str_aux,"LST",3)!=0)
-		return -4; /* WTF just happened? 2 */			
+		return -4;			
 	str_aux=str_aux+4;
 	if(str_aux[0]=='\n')
 	{	
@@ -615,7 +621,7 @@ int listSA(unsigned long saIP, unsigned short saport)
 		str_aux++;
 	}while((*str_aux)!='\n');
 	
-	printf("\n\n");
+	printf("\n");
 
 	UDPfreemssinfo(received);
 

@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	person *me;
 	db * mydb =  dbcreate();
 
-
+	version("1.2");
 
 /*-------- check arguments --------*/
 
@@ -46,56 +46,54 @@ int main(int argc, char **argv)
 		puts("Exiting...");
 		exit(2);
 	}
-	else
+
+
+	username = argv[1];
+	if(sscanf(username, "%[^.].%s", name, surname)!=2)
 	{
-		username = argv[1];
-		if(sscanf(username, "%[^.].%s", name, surname)!=2)
+		exit(3);
+	}
+
+	ddIP = atoh(argv[2]);
+	if(ddIP==0)
+	{
+		puts("> Invalid ddIP.");
+		exit(4);
+	}
+
+
+
+	while((opt=getopt(argc, argv, "t:d:i:p:"))!=-1) /*getopt() returns one arg at a time. sets optarg*/
+	{
+		switch(opt)
 		{
-			exit(3);
+			case 't': talkport = atoi(optarg); break;
+			case 'd': dnsport = atoi(optarg); break;
+			case 'i':
+				saIP = atoh(optarg);
+				if(saIP==0)
+				{
+					puts("> Invalid saIP.");
+					exit(5);
+				}
+				break;
+			case 'p': saport = atoi(optarg); break;
+			case '?': usage(argv[0]); exit(6);
 		}
+	}
 
-		ddIP = atoh(argv[2]);
-		if(ddIP==0)
+	if(saIP==0)
+	{
+		saIPs = getIPbyname("tejo.ist.utl.pt");
+		if(saIPs==NULL)
 		{
-			puts("Invalid ddIP.");
-			exit(4);
+			exit(1);
 		}
-
-
-
-		while((opt=getopt(argc, argv, "t:d:i:p:"))!=-1) /*getopt() returns one arg at a time. sets optarg*/
+		else
 		{
-			switch(opt)
-			{
-				case 't': talkport = atoi(optarg); break;
-				case 'd': dnsport = atoi(optarg); break;
-				case 'i':
-					saIP = atoh(optarg);
-					if(saIP==0)
-					{
-						puts("Invalid saIP.");
-						exit(5);
-					}
-					break;
-				case 'p': saport = atoi(optarg); break;
-				case '?': usage(argv[0]); exit(6);
-			}
+			saIP = saIPs[0];
+			free(saIPs);
 		}
-
-		if(saIP==0)
-		{
-			saIPs = getIPbyname("tejo.ist.utl.pt");
-			if(saIPs==NULL)
-			{
-				exit(1);
-			}
-			else
-			{
-				saIP = saIPs[0];
-				free(saIPs);
-			}
-		}
-
 	}
 
 
@@ -111,6 +109,10 @@ int main(int argc, char **argv)
 	printf("saport: %hu\n", saport);
 
 	#endif
+
+	putchar('\n');
+	listcommands();
+	putchar('\n');
 
 /*-------- END check arguments --------*/
 
@@ -238,10 +240,14 @@ int main(int argc, char **argv)
 						fds[fd_aux] = -1;
 						nr_chats--;
 
-						printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
-
 						if(nr_chats==0)
+						{
 							chatting = false;
+							puts("> Everyone disconnected. Use connect to connect again.");
+						}
+						else
+							printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
+
 					}
 					else
 						puts("> Failed to receive some message.");
@@ -405,6 +411,7 @@ int main(int argc, char **argv)
 							#ifdef DEBUG
 							puts("Could not create TCP server");
 							#endif
+							puts("> Could not create TCP server.");
 						}
 						if(listen(fds[TCP_fd], NR_CHATS)==-1)
 						{
@@ -430,18 +437,8 @@ int main(int argc, char **argv)
 					fds[TCP_fd] = -1;
 					fds[UDP_fd] = -1;
 
-					for(i=TCP_fd_chat; i<NR_FDS; i++)
-					{
-						fd_aux = fds[i];
-						if(fd_aux>0)
-						{
-							close(fds[i]);
-							chat_remove(fd_aux, connections);
-							fds[i] = -1;
-							nr_chats--;
-						}
-					}
-					// nr_chats = 0;
+					chat_clear(fds, connections);
+					nr_chats = 0;
 					chatting = false;
 
 					err=leave(me, saIP, saport, mydb);
@@ -454,6 +451,7 @@ int main(int argc, char **argv)
 						#endif
 					}
 					connected=false;
+					puts("> You left successfully.");
 				}
 				else 
 				{
@@ -525,6 +523,9 @@ int main(int argc, char **argv)
 								case -2:
 									printf("> Found %s.%s. Could not connect.\n", name, surname);
 									break;
+								case -3:
+									puts("> You tried to connect dto yourself. Please don't.");
+									break;
 								default:
 									printf("> Now connected to %s.%s.\n", name, surname);
 									chatting=true;
@@ -562,21 +563,23 @@ int main(int argc, char **argv)
 
 				if(chatting==true)	/* leave from current chat */
 				{
-					for(i=TCP_fd_chat; i<NR_FDS; i++)
-					{
-						fd_aux = fds[i];
-						if(fd_aux>0)
-						{
-							close(fds[i]);
-							chat_remove(fd_aux, connections);
-							fds[i] = -1;
-							nr_chats--;
-						}
-					}					// nr_chats = 0;
+					chat_clear(fds, connections);
+					nr_chats = 0;
 					chatting = false;
+
+					#ifdef DEBUG
+					for(i=0; i<NR_FDS; i++)
+						printf("%d  ", fds[i]);
+					putchar('\n');
+					for(i=0; i<NR_FDS; i++)
+						printf("%lX  ", (unsigned long)connections[i]);
+					putchar('\n');
+					#endif
+
+					puts("> You disconnected successfully.");
 				}
 				else
-					puts("> You were disconnected already");
+					puts("> You were disconnected already.");
 
 			}
 			else if(strcmp(comm, "message")==0)
@@ -614,30 +617,23 @@ int main(int argc, char **argv)
 				puts("exit");
 				#endif
 
-				/*disconnect, free, etc*/
-
-
+				/* disconnect, free, etc */
 
 				if(connected==true)
 				{
-						#ifdef DEBUG
-						puts("You are connected, disconnecting...");
-						#endif
-					/*Disconnect;*/
+					#ifdef DEBUG
+					puts("You are registered, unregistering...");
+					#endif
 
 					close(fds[TCP_fd]);	/* accept no more connections */
-					fds[TCP_fd] = -1;
-					fds[UDP_fd] = -1;
 
 					if(chatting==true)
 					{
 						#ifdef DEBUG
 						puts("You are chatting, disconnecting...");
 						#endif
-						close(fds[TCP_fd_chat]);
-						fds[TCP_fd_chat] = -1;
 
-						chatting=false;
+						chat_clear(fds, connections);
 					}
 
 					err=leave(me, saIP, saport, mydb);
@@ -662,7 +658,7 @@ int main(int argc, char **argv)
 				dbfree(mydb);
 				
 				#ifdef DEBUG
-				puts("Exiting");
+				puts("Exiting...");
 				#endif
 
 				exit(0);
@@ -673,15 +669,18 @@ int main(int argc, char **argv)
 				puts("list");
 				#endif
 
-				if(listSA(saIP, saport)!=0)
+				if(connected!=false)
 				{
-					#ifdef DEBUG
-					puts("list ");
-					#endif
+					err=listSA(saIP, saport);
+					if(err!=0)
+					{
+						#ifdef DEBUG
+						printf("err = %d\n", err);
+						#endif
+					}
 				}
-
-				
-
+				else
+					puts("Please join before listing.");
 			}
 			else
 			{

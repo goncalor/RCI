@@ -18,6 +18,7 @@ int chat_send_LST(int fd, connection **connections);
 int chat_LST(int *nr_chats, char *mess, unsigned long myIP, unsigned short myport, connection **connections);
 int chat_add(int fd, unsigned long IP, unsigned short port, connection **connections);
 int chat_remove(int fd, connection **connections);
+void chat_clear(int *fds, connection **connections);
 int chat_fd_comp(int fd1, int fd2);
 
 

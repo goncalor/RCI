@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #define FIRST_FD 3
 
@@ -187,12 +188,29 @@ int chat_remove(int fd, connection **connections)
 	return i;
 }
 
+/* frees everything in connections and closes everything in fds */
+void chat_clear(int *fds, connection **connections)
+{
+	int i;
+
+	for(i=FIRST_FD; connections[i]!=(connection*)1; i++)
+	{
+		if(fds[i]>0)
+		{
+			close(fds[i]);
+			fds[i] = -1;
+			free(connections[i]);
+			connections[i]=NULL;
+		}
+/*		if(connections[i]!=NULL)
+			free(connections[i]);
+		connections[i]=NULL;
+*/	}
+}
+
 int chat_fd_comp(int fd1, int fd2)
 {
 	return fd1 == fd2;
 }
-
-
-
 
 
