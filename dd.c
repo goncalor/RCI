@@ -716,10 +716,33 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 					{
 						/*do something about it*/		
 						#ifdef DEBUG
-						printf("leave ERROR:%d\n", err);
+						printf("leave ERROR:%d\n",err);
 						#endif
+						if(err==-1)
+						{
+							puts("> Leaving was unsucessfull, try leaving again.");
+						}
+						if(err==-2)
+						{
+							puts("> There was a problem when leaving. There is a change the SA and the SNP databases are corrupted. Exiting...");
+							dbclean(mydb);
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
+						if(err==-3)
+						{
+							puts("> There was a problem when leaving. We could sitll exist in some databases. Exiting...");
+							dbclean(mydb);
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
 					}
-					connected=false;
+					else 
+					{
+						connected=false;
+					}
 				}
 				else 
 				{
@@ -727,15 +750,17 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 						puts("You are not connected");
 						#endif
 				}
-
-				personfree(me);
-				dbfree(mydb);
+				if(connected==false)
+				{
+					personfree(me);
+					dbfree(mydb);
 				
-				#ifdef DEBUG
-				puts("Exiting...");
-				#endif
+					#ifdef DEBUG
+					puts("Exiting...");
+					#endif
 
-				exit(0);
+					exit(0);
+				}
 			}
 			else if(strcmp(comm, "list")==0)
 			{
