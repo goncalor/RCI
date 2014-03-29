@@ -34,6 +34,8 @@ int MSS(char *str)
 int OK(unsigned long IP,unsigned short port)
 {
 	UDPmssinfo * received = UDPrecv();
+	if(received==NULL)
+		return -2;
 	if(UDPcmpsender(IP,port, received)!=0)
 		return -1;
 	if(strncmp("OK",UDPgetmss(received),2)!=0)
@@ -50,6 +52,10 @@ int OKlistrcv(list ** OK_list)
 	while(*OK_list!=NULL)
 	{
 		received = UDPrecv();
+		if(received==NULL)
+		{
+			return -3;
+		}
 		if(strncmp("OK",UDPgetmss(received),2)!=0)
 		{
 			OKinfofree(OKrcv);
@@ -70,7 +76,7 @@ int OKlistrcv(list ** OK_list)
 
 int UDPprocess(db * mydb, person * me)
 {
-	UDPmssinfo * received = UDPrecv();
+	UDPmssinfo * received = UDPrecv(); /*não se faz verificação pois já houve um select antes.*/
 	char * mssaux = UDPgetmss(received);
 	int i;
 
@@ -93,6 +99,7 @@ int UDPprocess(db * mydb, person * me)
 			if(i!=0)
 			{
 				printf("REG Error: %d\n",i);
+				UDPfreemssinfo(received);
 				return -1;
 			}
 			
@@ -100,7 +107,10 @@ int UDPprocess(db * mydb, person * me)
 	else if(strncmp("DNS",mssaux,3)==0)
 	{
 		if(DNS(mydb,received, me)!=0)
+		{
+			UDPfreemssinfo(received);
 			return -2;
+		}
 	}
 	else if(strncmp("QRY",mssaux,3)==0)
 	{
@@ -108,6 +118,7 @@ int UDPprocess(db * mydb, person * me)
 		if(i<0)
 		{
 			printf("REG Error: %d\n",i);
+			UDPfreemssinfo(received);
 			return -3;
 		}
 	}
@@ -117,6 +128,7 @@ int UDPprocess(db * mydb, person * me)
 		if(i!=0)
 		{
 			printf("UNR Error: %d\n",i);
+			UDPfreemssinfo(received);
 			return -4;
 		}
 	}
@@ -125,11 +137,13 @@ int UDPprocess(db * mydb, person * me)
 	#ifdef DEBUG
 	puts("received random Ok there must have been an error");
 	#endif
+		UDPfreemssinfo(received);
 		return -5;
 	}
 	else 
 	{
 		/*Unknown command*/
+		UDPfreemssinfo(received);
 		return -6;
 	}
 	UDPfreemssinfo(received);
@@ -152,14 +166,22 @@ int REG(db * mydb, UDPmssinfo * received)
 
 	/*Don't know if I should compare who sent the REG with the info on REG*/
 
-	if(UDPcmpsender(IPh,UDPport, received)!=0)
-		return -2; /*I have to think about this*/
+	/*printf("IP1: %lu; port1: %hu\n", IPh, UDPport);
+	printf("IP2: %lu; port2: %hu\n", UDPgetIP(received), UDPgetport(received));*/
 
+	if(UDPcmpsender(IPh,UDPport, received)!=0)
+	{
+		personfree(new);
+		return -2; /*I have to think about this*/
+	}
 	/*Verificar se o utilizador Já está registado.*/
 	if(dbpersonfindbyname(mydb,new)==NULL)	
 	{	
 		if(dbinsertperson(mydb,new)!=0)
+		{
+			personfree(new);
 			return -1;
+		}
 		if(AmItheauth(mydb)==1)
 		{
 
@@ -202,8 +224,10 @@ int REG(db * mydb, UDPmssinfo * received)
 			#endif
 
 			if(UDPsend(IPh, UDPport, LSTstr)==-1)
+			{
+				personfree(new);
 				return -1;
-
+			}
 			return 0;
 		}
 	}

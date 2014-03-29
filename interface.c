@@ -42,13 +42,10 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			#ifdef DEBUG
 			puts("Waiting for answer from server");
 		#endif
-	/*It will block if no answer*/
 	UDPmssinfo * received = UDPrecv();
 	if(received==NULL)
-	{
-		UDPfreemssinfo(received);	
 		return -3;
-	}
+
 	#ifdef DEBUG
 			printf("Received:%s\n",UDPgetmss(received));
 		#endif
@@ -117,10 +114,9 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 			personfree(auth);
 			return -7;
 		}
-		UDPmssinfo * LST= UDPrecv();	/*Maybe there is a problem here.we could only receive part of the message*/
+		UDPmssinfo * LST= UDPrecv();	
 		if(LST==NULL)
 		{
-			UDPfreemssinfo(LST);
 			personfree(auth);	
 			return -8;
 		}
@@ -225,13 +221,19 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 
 /*Now receive the OKs*/
 
-		if(OKlistrcv(&OK_REG)!=0)
-		{		
+		i=OKlistrcv(&OK_REG);
+		if(i!=0)
+		{	
 			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
-			personfree(auth);
-			dbclean(mydb);
-			return -16;
-		}			
+			if(i==-3)
+			{
+				puts("> Didn't receive confirmation from at least one person, this can cause problems later.");
+			} else {
+				personfree(auth);
+				dbclean(mydb);
+				return -16;
+			}
+		}
 		personfree(auth);
 		return fdUDP;
 	}
@@ -471,7 +473,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 			printf("Sending %s to everyone on the DB \n",buffer);
 		#endif		
 
-		list * aux_list2,* OK_REG=LSTinit();
+		list * aux_list2,* OK_UNR=LSTinit();
 		OKinfo * OK_aux;
 
 		for(i=0;i<255;i++)
@@ -483,31 +485,36 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
 					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
 					if(OK_aux==NULL)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
-					aux_list2=LSTadd(OK_REG, OK_aux);
+					aux_list2=LSTadd(OK_UNR, OK_aux);
 					if(aux_list2==NULL)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
-					OK_REG=aux_list2;
+					OK_UNR=aux_list2;
 				}
 			}
 		}
 /*Now receive the OKs*/
-
-		if(OKlistrcv(&OK_REG)!=0)
-		{		
-			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
-			return -3;
+		i=OKlistrcv(&OK_UNR);
+		if(i!=0)
+		{	
+			LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
+			if(i==-3)
+			{
+				puts("> Didn't receive confirmation from at least one person");
+			} else {
+				return -3;
+			}
 		}			
 			/*Free the db*/
 		dbclean(mydb);
@@ -525,7 +532,7 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 		list * aux_list, * aux_list2;
 		person * aux_person;
 
-		list * OK_REG=LSTinit();
+		list * OK_UNR=LSTinit();
 		OKinfo * OK_aux;
 
 		#ifdef DEBUG
@@ -540,33 +547,39 @@ int leave(person * me, unsigned long saIP, unsigned short saport, db*mydb)
 				{
 					if(UDPsend(getpersonIP(aux_person),getpersonUDPport(aux_person),buffer)==-1)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
 					OK_aux=OKinfocreate(getpersonIP(aux_person), getpersonUDPport(aux_person));
 					if(OK_aux==NULL)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
-					aux_list2=LSTadd(OK_REG, OK_aux);
+					aux_list2=LSTadd(OK_UNR, OK_aux);
 					if(aux_list2==NULL)
 					{	
-						LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
+						LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
 						return -3;
 					}
-					OK_REG=aux_list2;
+					OK_UNR=aux_list2;
 				}
 			}
 		}
 
 /*Now receive the OKs*/
 
-		if(OKlistrcv(&OK_REG)!=0)
-		{		
-			LSTdestroy(OK_REG, (void (*)(Item)) OKinfofree);	
-			return -3;
-		}		
+		i=OKlistrcv(&OK_UNR);
+		if(i!=0)
+		{	
+			LSTdestroy(OK_UNR, (void (*)(Item)) OKinfofree);	
+			if(i==-3)
+			{
+				puts("> Didn't receive confirmation from at least one person");
+			} else {
+				return -3;
+			}
+		}
 
 		/*Free the db*/
 		dbclean(mydb);

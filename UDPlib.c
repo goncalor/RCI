@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "UDPlib.h"
 #include "define.h"
+#include <sys/select.h>
 
 #define BUF_LEN_UDP 5120 /*see max size of UDP Package*/
 
@@ -100,19 +101,35 @@ UDPmssinfo * UDPrecv()
 	unsigned int addrlen=sizeof(src_addr);
 	char buffer[BUF_LEN_UDP];
 	int mess_len;
+	struct timeval timeout = {20, 0};
+	fd_set rfds;
 
-	mess_len = recvfrom(UDPfd,buffer,BUF_LEN_UDP,0,(struct sockaddr*)&src_addr,&addrlen);
-	if(mess_len==-1)
-		return NULL;
+	FD_ZERO(&rfds);
+	FD_SET(UDPfd,&rfds);
 
-	buffer[mess_len]='\0';
+	select(UDPfd+1, &rfds, NULL, NULL, &timeout);
 
-	#ifdef DEBUG
-	printf("Received through UDP=%s\n",buffer);
-	#endif
+	if(FD_ISSET(UDPfd, &rfds))
+	{
 
-	return UDPmssinfocreate(buffer, src_addr.sin_port, src_addr.sin_addr.s_addr);
+		mess_len = recvfrom(UDPfd,buffer,BUF_LEN_UDP,0,(struct sockaddr*)&src_addr,&addrlen);
+		if(mess_len==-1)
+			return NULL;
 
+		buffer[mess_len]='\0';
+
+		#ifdef DEBUG
+		printf("Received through UDP=%s\n",buffer);
+
+		printf("From: %s at port: %hu\n",inet_ntoa(src_addr.sin_addr),  ntohs(src_addr.sin_port));
+
+		#endif
+
+		return UDPmssinfocreate(buffer, src_addr.sin_port, src_addr.sin_addr.s_addr);
+	}
+	else{
+	return NULL;
+	}
 }
 
 

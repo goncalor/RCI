@@ -445,12 +445,17 @@ int main(int argc, char **argv)
 							personfree(me);
 							dbfree(mydb);
 							exit(-1);
-						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
+						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
 							connected=false;
 							UDPclose();
 							puts("> Please try joining again.");	
 						} else if(fds[UDP_fd]==-6) {
 
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}	 else if(fds[UDP_fd]==-8) {
+							puts("> Join Error, probabily the SNP database is now corrupted. Exiting...");	
 							personfree(me);
 							dbfree(mydb);
 							exit(-2);
@@ -549,6 +554,9 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 							if(err==-9||err==-4||err==-12)
 							{
 								printf("> %s.%s was not found\n", name, surname);
+							}	else if(err==-2 || err==-7)
+							{
+								puts("Error during find, please try again.");
 							}
 						}
 						else
@@ -743,6 +751,10 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 						#ifdef DEBUG
 						printf("err = %d\n", err);
 						#endif
+					}
+					if(err==-2)
+					{
+						puts(">Error during list, please try again.");
 					}
 				}
 				else
