@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	db * mydb =  dbcreate();
 	short wantdnsport, wanttalkport;
 
-	version("1.2");
+	version("1.3");
 
 /*-------- check arguments --------*/
 

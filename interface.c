@@ -693,7 +693,7 @@ int listSA(unsigned long saIP, unsigned short saport)
 			#endif
 			return -6;
 		}
-		printf("%s.%s\n",name, surname);
+		printf(" - %s.%s\n",name, surname);
 		str_aux=strchr(str_aux,'\n');
 		str_aux++;
 	}while((*str_aux)!='\n');
