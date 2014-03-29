@@ -148,7 +148,7 @@ int join(person * me, unsigned long saIP, unsigned short saport, db * mydb)
 		aux=message+strlen(buffer)+1;
 		if(aux[0]=='\n')
 		{		/*That name is already in use*/
-			puts("Name already in use.");
+			puts(">Name already in use.Try a different one. Exiting...");
 			personfree(auth);
 			UDPfreemssinfo(LST);
 			return -11;

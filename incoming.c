@@ -150,13 +150,14 @@ int REG(db * mydb, UDPmssinfo * received)
 	IPh=atoh(IP);
 	person * new =personcreate(IPh,UDPport,TCPport,name,surname);
 
+
 	/*Don't know if I should compare who sent the REG with the info on REG*/
 
 	if(UDPcmpsender(IPh,UDPport, received)!=0)
 		return -2; /*I have to think about this*/
 
 	/*Verificar se o utilizador Já está registado.*/
-	if(dbpersonfind(mydb,new)==NULL)	
+	if(dbpersonfindbyname(mydb,new)==NULL)	
 	{	
 		if(dbinsertperson(mydb,new)!=0)
 			return -1;
@@ -209,6 +210,10 @@ int REG(db * mydb, UDPmssinfo * received)
 	}
 	else{
 		puts("Already Registered");
+		if( UDPsend(IPh, UDPport,"LST\n\n")==-1)
+			return -1;
+		personfree(new);
+		return 0;
 	}
 	if( UDPsend(IPh, UDPport,"OK")==-1)
 			return -1;

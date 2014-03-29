@@ -385,11 +385,17 @@ int main(int argc, char **argv)
 							personfree(me);
 							dbfree(mydb);
 							exit(-1);
-						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-11|| fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
+						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
 							connected=false;
 							UDPclose();
 							puts("> Try joining again");	
 						} else if(fds[UDP_fd]==-6) {
+
+							personfree(me);
+							dbfree(mydb);
+							exit(-1);
+						}
+							else if(fds[UDP_fd]==-11) {
 
 							personfree(me);
 							dbfree(mydb);
