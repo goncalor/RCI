@@ -5,6 +5,6 @@
 #define IP_LEN 16
 #define BUF_LEN 1024
 
-#define DEBUG	/* comment to disable debug compilation */
+//#define DEBUG	/* comment to disable debug compilation */
 
 #endif

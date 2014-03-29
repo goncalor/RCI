@@ -190,13 +190,17 @@ int main(int argc, char **argv)
 				fd_aux = accept(fds[TCP_fd], (struct sockaddr *)&caller_addr, &caller_addr_size);
 				i = chat_add(fd_aux, 0, 0, connections);
 				if(i<0)
-				#ifdef DEBUG
-				puts("something went wrong adding new connection");
-				#endif
-				fds[i] = fd_aux;
-				nr_chats++;	/* we're chatting with one more person */
-				chatting = true;
-
+				{
+					#ifdef DEBUG
+					puts("something went wrong adding new connection");
+					#endif
+				}
+				else
+				{
+					fds[i] = fd_aux;
+					nr_chats++;	/* we're chatting with one more person */
+					chatting = true;
+				}
 //				printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
 			}
 			else
@@ -314,7 +318,7 @@ int main(int argc, char **argv)
 							if(err!=0)
 							{
 								#ifdef DEBUG
-								printf("error while ADD ing. err = %d", err);
+								printf("error while ADD ing. err = %d\n", err);
 								#endif
 							}
 							printf("> Now chatting with (%d) %s.\n", nr_chats, nr_chats > 1 ? "people":"person");
@@ -554,9 +558,10 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 							if(err==-9||err==-4||err==-12)
 							{
 								printf("> %s.%s was not found\n", name, surname);
-							}	else if(err==-2 || err==-7)
+							}
+							else if(err==-2 || err==-7)
 							{
-								puts("Error during find, please try again.");
+								puts("> Error during find, please try again.");
 							}
 						}
 						else
@@ -622,7 +627,7 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 						}
 						else
 						{
-							puts("> You are connected already. Use leave before connecting again.");
+							puts("> You are connected already. Use disconnect before connecting again.");
 						}
 					}
 					else
@@ -663,7 +668,7 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 				#endif
 
 				if(sscanf(buf, " %*s %[^\n]", buf)!=1)
-					puts("> message string");
+					puts("> message message");
 				else
 				{
 					if(chatting==true)
@@ -677,7 +682,7 @@ printf("UDP fd = %d\n", fds[UDP_fd]);
 									puts("> Unable to send message.");
 							}
 						}
-						printf("%s\n", buf);
+						//printf("%s\n", buf);
 					}
 					else
 					{
