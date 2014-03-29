@@ -472,8 +472,6 @@ int main(int argc, char **argv)
 						}
 					}
 
-printf("UDP fd = %d\n", fds[UDP_fd]);
-
 					if(err==false)
 						puts("> Joined successfully.");
 				}
