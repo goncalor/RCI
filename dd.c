@@ -19,8 +19,6 @@
 #define NR_CHATS 15
 #define NR_FDS 3 + NR_CHATS
 
-#define DEBUG
-
 int main(int argc, char **argv)
 {
 	unsigned short talkport=7000;
@@ -33,6 +31,7 @@ int main(int argc, char **argv)
 	char buf[BUF_LEN], comm[COMM_LEN];
 	person *me;
 	db * mydb =  dbcreate();
+	short wantdnsport, wanttalkport;
 
 	version("1.2");
 
@@ -62,13 +61,13 @@ int main(int argc, char **argv)
 	}
 
 
-
+	wantdnsport = wanttalkport = 0;
 	while((opt=getopt(argc, argv, "t:d:i:p:"))!=-1) /*getopt() returns one arg at a time. sets optarg*/
 	{
 		switch(opt)
 		{
-			case 't': talkport = atoi(optarg); break;
-			case 'd': dnsport = atoi(optarg); break;
+			case 't': talkport = atoi(optarg); wanttalkport = 1; break;
+			case 'd': dnsport = atoi(optarg); wantdnsport = 1; break;
 			case 'i':
 				saIP = atoh(optarg);
 				if(saIP==0)
@@ -363,75 +362,112 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					/* create TCP server */
+
+					#ifdef DEBUG
+					printf("creating TCP server on %08lX:%d\n", ddIP, talkport);
+					#endif
+
+					err = false;
+					fds[TCP_fd] = TCPcreate(ddIP, talkport);
+					if(fds[TCP_fd]<0)
+					{
+						err = true;
+						#ifdef DEBUG
+						puts("Could not create TCP server");
+						#endif
+						//puts("> Could not create TCP server.");
+					}
+
+					if(listen(fds[TCP_fd], NR_CHATS)==-1)
+					{
+						/*do something about it*/
+						#ifdef DEBUG
+						printf("listen()ing to port %d failed\n", talkport);
+						#endif
+
+						if(wanttalkport==true)
+							printf("> Port %d already in use.", talkport);
+
+						while((fds[TCP_fd] = TCPcreate(ddIP, talkport))<0 || listen(fds[TCP_fd], NR_CHATS)==-1)
+						{
+							talkport = rand()%65536;
+						}
+						strcpy(name, getpersonname(me));
+						strcpy(surname, getpersonsurname(me));
+						personupdate(me, getpersonIP(me), getpersonUDPport(me), talkport, name, surname);
+
+						if(wanttalkport==true)
+							printf(" Used %d instead for talkport.\n", talkport);
+					}
+
+
+
+					/* create UDP server etc */
+
 					fds[UDP_fd] = join(me, saIP, saport, mydb);
+					connected = true;	/* if something bad happens remember to assign false */
+
+					if(fds[UDP_fd]==-1)
+					{
+						err = true;
+						if(wantdnsport==true)
+							printf("> Port %d already in use.", dnsport);
+
+						while((fds[UDP_fd] = join(me, saIP, saport, mydb))==-1)
+						{
+							dnsport = rand()%65536;
+							strcpy(name, getpersonname(me));
+							strcpy(surname, getpersonsurname(me));
+							personupdate(me, getpersonIP(me), dnsport, getpersonTCPport(me), name, surname);
+						}
+
+						if(wantdnsport==true)
+							printf(" Used %d instead for dnsport.\n", dnsport);
+					}
 
 					if(fds[UDP_fd]<0)
 					{
 						/*do something about it*/
 
-						puts("> Join Failed");	
+						puts("> Join failed");	
 
 						#ifdef DEBUG
 						printf("join Error:%d\n\n Errno is:%d\t%s",fds[UDP_fd],errno, strerror(errno));
 						#endif
 
-						
 
 						if(fds[UDP_fd]==-1)
 						{
-						#ifdef DEBUG
+							#ifdef DEBUG
 							puts("UDPcreate error");
-						#endif
+							#endif
 							personfree(me);
 							dbfree(mydb);
 							exit(-1);
 						} else if(fds[UDP_fd]==-2 ||fds[UDP_fd]==-3 || fds[UDP_fd]==-4 || fds[UDP_fd]==-5 || fds[UDP_fd]==-7|| fds[UDP_fd]==-8|| fds[UDP_fd]==-9 || fds[UDP_fd]==-10 || fds[UDP_fd]==-12 || fds[UDP_fd]==-13 || fds[UDP_fd]==-14 || fds[UDP_fd]==-15) {
 							connected=false;
 							UDPclose();
-							puts("> Try joining again");	
+							puts("> Please try joining again.");	
 						} else if(fds[UDP_fd]==-6) {
 
 							personfree(me);
 							dbfree(mydb);
-							exit(-1);
+							exit(-2);
 						}
 							else if(fds[UDP_fd]==-11) {
-
+							puts(">Name already in use. Try a different one.\n\nExiting...");
 							personfree(me);
 							dbfree(mydb);
-							exit(-1);
-						}
-
-
-
-					}
-					else
-					{
-						#ifdef DEBUG
-						printf("creating TCP server on %08lX:%d\n", ddIP, talkport);
-						#endif
-
-						connected = true;
-						fds[TCP_fd] = TCPcreate(ddIP, talkport);
-						if(fds[TCP_fd]<0)
-						{
-							#ifdef DEBUG
-							puts("Could not create TCP server");
-							#endif
-							puts("> Could not create TCP server.");
-						}
-						if(listen(fds[TCP_fd], NR_CHATS)==-1)
-						{
-							/*do something about it*/
-							#ifdef DEBUG
-							printf("listen()ing to port %d failed\n", talkport);
-							#endif
-
-							printf("> Port %d already in use. Use -t option and try a different port.\n", talkport);
+							exit(-3);
 						}
 					}
+
+printf("UDP fd = %d\n", fds[UDP_fd]);
+
+					if(err==false)
+						puts("> Joined successfully.");
 				}
-
 			}
 			else if(strcmp(comm, "leave")==0)
 			{
@@ -554,7 +590,7 @@ int main(int argc, char **argv)
 									printf("> Found %s.%s. Could not connect.\n", name, surname);
 									break;
 								case -3:
-									puts("> You tried to connect dto yourself. Please don't.");
+									puts("> You tried to connect to yourself. Please don't.");
 									break;
 								default:
 									printf("> Now connected to %s.%s.\n", name, surname);

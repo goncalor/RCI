@@ -1,6 +1,7 @@
 #include "TCPlib.h"
 #include "list.h"
 #include "mpchat.h"
+#include "define.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,8 +9,6 @@
 #include <unistd.h>
 
 #define FIRST_FD 3
-
-#define DEBUG
 
 int chat_send_WHO(int fd)
 {
@@ -100,9 +99,10 @@ int chat_LST(int *nr_chats, char *mess, unsigned long myIP, unsigned short mypor
 	char *aux;
 	unsigned long IP;
 	unsigned short port;
-	int fd, err;
+	int fd;
 
 	#ifdef DEBUG
+	int err;
 	printf("received connections list: %s", mess);
 	#endif
 
@@ -132,7 +132,12 @@ int chat_LST(int *nr_chats, char *mess, unsigned long myIP, unsigned short mypor
 			return -1;
 		}
 
-		err = chat_send_ADD(fd, myIP, myport);	/* ask to be added to their connections list */
+		#ifdef DEBUG
+		err = 
+		#endif
+
+		chat_send_ADD(fd, myIP, myport);	/* ask to be added to their connections list */
+
 		#ifdef DEBUG
 		if(err!=0)
 		puts("failed to send ADD in chat_LST()");

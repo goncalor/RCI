@@ -6,9 +6,7 @@
 #include "UDPlib.h"
 #include "define.h"
 
-
-#define BUF_LEN_UDP 5120 /*Ver max size of UDP Package*/
-
+#define BUF_LEN_UDP 5120 /*see max size of UDP Package*/
 
 struct UDPmssinfo {
 

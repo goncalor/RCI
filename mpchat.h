@@ -21,5 +21,4 @@ int chat_remove(int fd, connection **connections);
 void chat_clear(int *fds, connection **connections);
 int chat_fd_comp(int fd1, int fd2);
 
-
 #endif

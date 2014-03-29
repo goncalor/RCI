@@ -10,7 +10,6 @@
 
 #define BUF_LEN 1024
 
-
 /* prints incoming message. str is altered to be only the message (without protocol words. returns 0 on success. returns -1 if received message is badly formatted */
 int MSS(char *str)
 {
