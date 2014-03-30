@@ -366,6 +366,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					puts("> Joining...");
 					/* create TCP server */
 
 					#ifdef DEBUG
@@ -414,7 +415,6 @@ int main(int argc, char **argv)
 
 					if(fds[UDP_fd]==-1)
 					{
-						err = true;
 						if(wantdnsport==true)
 							printf("> Port %d already in use.", dnsport);
 
@@ -433,8 +433,8 @@ int main(int argc, char **argv)
 					if(fds[UDP_fd]<0)
 					{
 						/*do something about it*/
-
-						puts("> Join failed");	
+						err = true;
+						puts("> Join failed.");	
 
 						#ifdef DEBUG
 						printf("join Error:%d\n\n Errno is:%d\t%s",fds[UDP_fd],errno, strerror(errno));
@@ -544,6 +544,7 @@ int main(int argc, char **argv)
 				{
 					if(connected==true)
 					{
+						printf("> Looking up %s.%s...\n", name, surname);
 						err = find(saIP, saport, name, surname, &interloc, me, mydb);
 						if(err!=0)
 						{
@@ -591,6 +592,7 @@ int main(int argc, char **argv)
 					{
 						if(chatting==false)
 						{
+							puts("> Trying to connect...");
 							err = fds[TCP_fd_chat] = Connect(saIP, saport, name, surname, &interloc, me, mydb);
 							switch(err)
 							{
@@ -693,6 +695,8 @@ int main(int argc, char **argv)
 				#ifdef DEBUG
 				puts("exit");
 				#endif
+
+				puts("> Exiting...");
 
 				/* disconnect, free, etc */
 
